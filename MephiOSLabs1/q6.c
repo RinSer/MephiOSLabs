@@ -4,7 +4,7 @@
 #include <string.h>
 
 /*
-Модифицировать программу п. 4 для создания разреженного файла.
+РњРѕРґРёС„РёС†РёСЂРѕРІР°С‚СЊ РїСЂРѕРіСЂР°РјРјСѓ Рї. 4 РґР»СЏ СЃРѕР·РґР°РЅРёСЏ СЂР°Р·СЂРµР¶РµРЅРЅРѕРіРѕ С„Р°Р№Р»Р°.
 */
 
 int q6(char* arg)
@@ -17,7 +17,6 @@ int q6(char* arg)
         return -1;
     }
 
-    // удалить файл, если он существует
     if (access(arg, F_OK) != -1) remove(arg);
     else suppress();
 
@@ -26,18 +25,14 @@ int q6(char* arg)
     int fd = open(arg, O_RDWR | O_CREAT);
     if (catch() < 0) return -1;
 
-    // записать в него строкy
     char first_line[] = "First line test input.\n";
     add_line(fd, first_line, bytes_size);
 
-    // добавляем разреженность (дырку)
     int hole_size = 1000;
     lseek(fd, hole_size, SEEK_CUR);
 
-    // и ещё строку
     add_line(fd, "Second line test input.\n", bytes_size);
 
-    // прочитать содержимое файла
     char fc;
     printf("current offset from file start is %d\n", lseek(fd, 0, SEEK_SET));
     while (read(fd, &fc, bytes_size) > 0)
@@ -49,7 +44,6 @@ int q6(char* arg)
 
     printf("current offset from file start is %d\n", lseek(fd, 0, SEEK_CUR));
 
-    // закрыть
     close(fd);
     if (catch() < 0) return -1;
 

@@ -3,9 +3,9 @@
 #include <unistd.h>
 
 /*
-Повторно выполнить программу п. 4; 
-проверить результаты выполнения каждого системного вызова. 
-Объяснить полученные результаты.
+РџРѕРІС‚РѕСЂРЅРѕ РІС‹РїРѕР»РЅРёС‚СЊ РїСЂРѕРіСЂР°РјРјСѓ Рї. 4; 
+РїСЂРѕРІРµСЂРёС‚СЊ СЂРµР·СѓР»СЊС‚Р°С‚С‹ РІС‹РїРѕР»РЅРµРЅРёСЏ РєР°Р¶РґРѕРіРѕ СЃРёСЃС‚РµРјРЅРѕРіРѕ РІС‹Р·РѕРІР°. 
+РћР±СЉСЏСЃРЅРёС‚СЊ РїРѕР»СѓС‡РµРЅРЅС‹Рµ СЂРµР·СѓР»СЊС‚Р°С‚С‹.
 */
 
 int q5(char* arg)
@@ -18,7 +18,6 @@ int q5(char* arg)
         return -1;
     }
 
-    // удалить файл, если он существует
     if (access(arg, F_OK) != -1) remove(arg);
     else suppress();
 
@@ -28,7 +27,6 @@ int q5(char* arg)
     if (catch() < 0) return -1;
     printf("sys call result fd = %d\n", fd);
 
-    // записать в него несколько строк
     char file_lines[] = "First line test input.\nSecond line test input.\nThird line test input.\n";
     int len = sizeof(file_lines);
     int bytes_count = 0;
@@ -40,7 +38,6 @@ int q5(char* arg)
     }
     printf("have read %d bytes from file %s\n", bytes_count, arg);
 
-    // прочитать содержимое файла
     char fc;
     printf("current offset from file start is %d\n", lseek(fd, 0, SEEK_SET));
     while (read(fd, &fc, bytes_size) > 0)
@@ -48,7 +45,6 @@ int q5(char* arg)
 
     printf("current offset from file start is %d\n", lseek(fd, 0, SEEK_CUR));
 
-    // закрыть
     close(fd);
     if (catch() < 0) return -1;
 
