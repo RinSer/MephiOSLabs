@@ -2,77 +2,66 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 /*
-Изменить программу п. 8 таким образом, чтобы функция копирования использовала стандартные ввод и вывод, 
-а вызывающая программа переназначала стандартные ввод и вывод на указанные в аргументах командной строки файлы.
+Выполнить п. 8 при условии, что общий файл для чтения открывается в каждом из порожденных процессов.
 */
 
-int q9(char* arg1, char* arg2)
+char ParentFileName9[] = "parentCopy9";
+char ChildFileName9[] = "childCopy9";
+
+void onSighup2()
 {
-    printf("=== question 9 start ===\n\n");
+    signal(SIGHUP, onSighup2); /* reset signal */
 
-    char file_name1[255], file_name2[255];
-    char terminal[] = "/dev/tty";
+    int pfd = open(ParentFileName9, O_RDONLY);
+    catch();
+    int cfd = open(ChildFileName9, O_RDONLY);
+    catch();
 
-    if (arg1 == NULL || sizeof(arg1) == 0)
-    {
-        printf("Enter source file name:\n");
-        scanf("%255s", &file_name1);
-    }
-    else
-        strcpy(file_name1, arg1);
+    printf("Child prints parent file\n");
+    copyFileTo("", pfd, 1);
+    close(pfd);
 
-    if (arg2 == NULL || sizeof(arg1) == 0)
-    {
-        printf("Enter destination file name:\n");
-        scanf("%255s", &file_name2);
-    }
-    else
-        strcpy(file_name2, arg2);
+    printf("\nChild prints child file\n");
+    copyFileTo("", cfd, 1);
+    close(cfd);
 
-    stdin = open(file_name1, O_RDONLY);
-    if (catch() < 0) return -1;
-
-    // удалить файл, если он существует
-    if (access(file_name2, F_OK) != -1) remove(file_name2);
-    else suppress();
-
-    stdout = open(file_name2, O_CREAT | O_WRONLY);
-    if (catch() < 0) return -1;
-
-    copy_std_stream();
-
-    close(stdin);
-    close(stdout);
-
-    stdout = open(terminal, O_WRONLY);
-    if (catch() < 0) return -1;
-    char copy_message[255];
-    sprintf(copy_message, "%s file has been copied from %s\n", file_name2, file_name1);
-    write(stdout, copy_message, strlen(copy_message));
-    char final_message[] = "\n==== question 9 end ====\n";
-    write(stdout, final_message, strlen(final_message));
-    close(stdout);
-
-    return 0;
+    exit(0);
 }
 
-int copy_std_stream()
+int q9()
 {
-    int src_size = lseek(stdin, 0, SEEK_END);
-    if (catch() < 0) return -1;
+    int fd;
+    
+    int pid = fork();
 
-    lseek(stdin, 0, SEEK_SET);
-    if (catch() < 0) return -1;
+    if (pid < 0) return catch();
 
-    // копируем содержимое первого файла в память
-    char buffer[src_size];
-    read(stdin, buffer, src_size);
-    if (catch() < 0) return -1;
-    // записываем во второй файл
-    write(stdout, buffer, src_size);
-    if (catch() < 0) return -1;
+    if (pid > 0)
+    {
+        fd = open("/home/rinser/test8", O_RDONLY);
+        
+        copyFileTo(ParentFileName9, fd, -1);
+
+        kill(pid, SIGHUP);
+
+        int status;
+        wait(&status);
+    }
+    else
+    {
+        fd = open("/home/rinser/test8", O_RDONLY);
+        
+        copyFileTo(ChildFileName9, fd, -1);
+
+        signal(SIGHUP, onSighup2);
+        for (;;);
+    }
+
+    close(fd);
 
     return 0;
 }

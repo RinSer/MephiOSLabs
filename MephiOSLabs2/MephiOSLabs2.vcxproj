@@ -76,6 +76,7 @@
   <ImportGroup Label="PropertySheets" />
   <PropertyGroup Label="UserMacros" />
   <ItemGroup>
+    <ClCompile Include="argenv.c" />
     <ClCompile Include="catch.c" />
     <ClCompile Include="main.c" />
     <ClCompile Include="q1.c" />

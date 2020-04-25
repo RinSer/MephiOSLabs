@@ -1,38 +1,57 @@
 #include <stdio.h>
-#include <fcntl.h>
+#include <sys/wait.h>
+#include <unistd.h>
 #include <string.h>
 
 /*
-Написать программу, которая определяет, 
-какой файл из перечисленных в командной строке имеет наибольшую длину. 
-Вывести длину файла в байтах.
+Выполнить из программы на Си какую-либо команду Shell (cp или ls): 
+с помощью вызовов fork-exec, с помощью библиотечной функции system. 
+Необходимые для команды данные передать через аргументы командной строки.
 */
 
 int q11(int argc, char* argv[])
 {
-    printf("=== question 11 start ===\n\n");
-
-    int max_size = -1;
-    char max_file[255];
-    for (int i = 1; i < argc; i++)
+    if (argc < 3)
     {
-        int fd = open(argv[i], O_RDONLY);
-        catch();
-        int file_length = lseek(fd, 0, SEEK_END);
-        catch();
-
-        if (file_length > max_size)
-        {
-            max_size = file_length;
-            strcpy(max_file, argv[i]);
-            catch();
-        }
+        printf("Please enter cmd name and options separated by space\n");
+        return -1;
     }
 
-    printf("maximum file length is %d\n", max_size);
-    printf("longest file name is %s\n", max_file);
+    // склеиваем массив аргументов в одну строку
+    argv += 1;
+    argc -= 1;
+    int aggregateLength = argc;
+    for (int i = 0; i < argc; i++)
+        aggregateLength += strlen(argv[i]);
 
-    printf("\n==== question 11 end ====\n");
+    char command[aggregateLength];
+
+    for (int i = 0; i < argc; i++)
+    {
+        strcat(command, argv[i]);
+        if (i != argc + 1)
+            strcat(command, " ");
+    }
+
+    int pid = fork();
+
+    if (pid > 0)
+    {
+        int status;
+        wait(&status);
+
+        printf("\nParent process executes command using system() function:\n");
+
+        system(command);
+    }
+    else
+    {
+        printf("Child process executes command using execv() function:\n");
+
+        char* cmd[] = { "sh", "-c", command, NULL };
+
+        execvp("/usr/bin/sh", cmd);
+    }
 
     return 0;
 }

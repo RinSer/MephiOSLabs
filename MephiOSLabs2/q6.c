@@ -1,70 +1,44 @@
 #include <stdio.h>
-#include <fcntl.h>
+#include <sys/types.h>
 #include <unistd.h>
-#include <string.h>
+#include <sys/wait.h>
 
 /*
-Модифицировать программу п. 4 для создания разреженного файла.
+Изменить программу п. 3 так, чтобы оба процесса выполняли системный вызов pause после вывода идентификаторов. 
+Запустить программу в фоновом режиме и посмотрите (с помощью ps), какие процессы существуют для данного пользователя. 
+Выполнить kill -9 pid для родительского процесса. Что произойдет с порожденным? 
+После очистки текущего сеанса, вновь выполнить программу, но уже в интерактивном режиме. 
+Нажать на терминале клавишу CTRL-C. Что произойдет с родительским и порожденным процессами? 
+Можно ли получить такой же результат, если нажать клавишу прерывания после того, как родительский процесс завершится?
 */
 
-int q6(char* arg)
+int q6()
 {
-    printf("=== question 6 start ===\n\n");
+    int pid = fork();
 
-    if (arg == NULL || sizeof(arg) == 0)
+    if (pid < 0) return catch ();
+
+    if (pid > 0)
     {
-        printf("please enter the name of file to create as cmd arg!");
-        return -1;
+        printPIDs("Parent");
+
+        pause();
+        
+        int status;
+        if (waitpid(pid, &status, 0) == pid)
+        {
+            printf("\nChild process PID was %d\n", pid);
+            printf("Child process exited with %d status\n\n", status);
+        }
+        else
+            return catch ();
     }
+    else
+    {
+        printPIDs("Child");
 
-    // удалить файл, если он существует
-    if (access(arg, F_OK) != -1) remove(arg);
-    else suppress();
-
-    int bytes_size = 1;
-
-    int fd = open(arg, O_RDWR | O_CREAT);
-    if (catch() < 0) return -1;
-
-    // записать в него строкy
-    char first_line[] = "First line test input.\n";
-    add_line(fd, first_line, bytes_size);
-
-    // добавляем разреженность (дырку)
-    int hole_size = 1000;
-    lseek(fd, hole_size, SEEK_CUR);
-
-    // и ещё строку
-    add_line(fd, "Second line test input.\n", bytes_size);
-
-    // прочитать содержимое файла
-    char fc;
-    printf("current offset from file start is %d\n", lseek(fd, 0, SEEK_SET));
-    while (read(fd, &fc, bytes_size) > 0)
-        putchar(fc);
-
-    lseek(fd, hole_size + strlen(first_line), SEEK_SET);
-    while (read(fd, &fc, bytes_size) > 0)
-        putchar(fc);
-
-    printf("current offset from file start is %d\n", lseek(fd, 0, SEEK_CUR));
-
-    // закрыть
-    close(fd);
-    if (catch() < 0) return -1;
-
-    printf("\n==== question 6 end ====\n");
+        pause();
+    }
 
     return 0;
-}
-
-int add_line(int fd, char* file_lines, int bytes_size)
-{
-    int len = strlen(file_lines);
-    int bytes_count = 0;
-    for (int i = 0; i < len; i++)
-    {
-        bytes_count += write(fd, &file_lines[i], bytes_size);
-        if (catch() < 0) return -1;
-    }
 }

@@ -12,19 +12,21 @@ int main(int argc, char* argv[], char* env[])
 
     //q4();
 
-    q5();
+    //q5();
 
-    //q6(argv[1]);
+    //q6();
 
-    //q7(argv[1]);
+    //q7();
 
-    //q8(argv[1], argv[2]);
+    //q8();
 
-    //q9(argv[1], argv[2]);
+    //q9();
 
-    //q10(argv[2]);
+    //q10(argc, argv);
 
-    //q11(argc, argv);
+    q11(argc, argv);
+
+    //argenv(argc, argv);
 
     return 0;
 }

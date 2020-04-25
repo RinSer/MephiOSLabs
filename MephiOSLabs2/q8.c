@@ -2,73 +2,94 @@
 #include <string.h>
 #include <fcntl.h>
 #include <unistd.h>
+#include <sys/wait.h>
+#include <signal.h>
 
 /*
-Написать программу копирования одного файла в другой. 
-Имена файлов задаются в командной строке (первый аргумент - исходный файл, второй - результирующий). 
-Если аргументы командной строки отсутствуют, использовать стандартный ввод и стандартный вывод. 
-Копирование файлов выполнить с помощью функции.
+Открыть файл (достаточно большого размера), доступный для чтения. Имя файла передается из командной строки. 
+После открытия файла создать параллельный процесс с помощью только fork. 
+В обоих процессах создать свои файлы для записи, 
+читать информацию из общего файла и копировать ее в собственные выходные файлы (не на экран). 
+Вывести на экран содержимое полученных файлов из порожденного процесса по окончании записи в файл и из родительского процесса, 
+дождавшись завершения порожденного процесса. 
+Посмотреть, что изменится, если читаемую процессами информацию сразу выводить на экран.
 */
 
-int q8(char* arg1, char* arg2)
+char ParentFileName[] = "parentCopy8";
+char ChildFileName[] = "childCopy8";
+
+void onSighup()
 {
-    printf("=== question 8 start ===\n\n");
+    signal(SIGHUP, onSighup); /* reset signal */
 
-    char file_name1[255], file_name2[255];
+    int pfd = open(ParentFileName, O_RDONLY);
+    catch();
+    int cfd = open(ChildFileName, O_RDONLY);
+    catch();
 
-    if (arg1 == NULL || sizeof(arg1) == 0)
+    printf("Child prints parent file\n");
+    copyFileTo("", pfd, 1);
+    close(pfd);
+
+    printf("\nChild prints child file\n");
+    copyFileTo("", cfd, 1);
+    close(cfd);
+
+    exit(0);
+}
+
+int q8()
+{
+    int fd = open("/home/rinser/test8", O_RDONLY);
+
+    int pid = fork();
+
+    if (pid < 0) return catch();
+
+    if (pid > 0)
     {
-        printf("Enter source file name:\n");
-        scanf("%255s", &file_name1);
+        copyFileTo(ParentFileName, fd, -1);
+
+        kill(pid, SIGHUP);
+
+        int status;
+        wait(&status);
     }
     else
-        strcpy(file_name1, arg1);
-
-    if (arg2 == NULL || sizeof(arg1) == 0)
     {
-        printf("Enter destination file name:\n");
-        scanf("%255s", &file_name2);
+        copyFileTo(ChildFileName, fd, -1);
+        
+        signal(SIGHUP, onSighup);
+        for (;;);
     }
-    else
-        strcpy(file_name2, arg2);
 
-    copy_file(file_name1, file_name2);
-
-    printf("\n==== question 8 end ====\n");
+    close(fd);
 
     return 0;
 }
 
-int copy_file(char* src, char* dst)
+int copyFileTo(char fileName[], int cpd, int fd) 
 {
-    int srcd = open(src, O_RDONLY);
-    if (catch() < 0) return -1;
+    if (fd < 0)
+    {
+        if (access(fileName, F_OK) != -1) remove(fileName);
+        else suppress();
+        
+        fd = open(fileName, O_RDWR | O_CREAT);
+        catch ();
+    }
 
-    // удалить файл, если он существует
-    if (access(dst, F_OK) != -1) remove(dst);
-    else suppress();
-    
-    int dstd = open(dst, O_CREAT | O_WRONLY);
-    if (catch() < 0) return -1;
+    int file_size = lseek(cpd, 0, SEEK_END);
+    lseek(cpd, 0, SEEK_SET);
 
-    int src_size = lseek(srcd, 0, SEEK_END);
-    if (catch() < 0) return -1;
+    char buffer[file_size];
 
-    lseek(srcd, 0, SEEK_SET);
-    if (catch() < 0) return -1;
+    read(cpd, buffer, file_size);
 
-    // копируем содержимое первого файла в память
-    char buffer[src_size];
-    read(srcd, buffer, src_size);
-    if (catch() < 0) return -1;
-    // записываем во второй файл
-    write(dstd, buffer, src_size);
-    if (catch() < 0) return -1;
+    write(fd, buffer, file_size);
 
-    close(srcd);
-    close(dstd);
-
-    printf("%s file has been copied from %s\n", dst, src);
+    if (fd > 1) close(fd);
+    close(cpd);
 
     return 0;
 }

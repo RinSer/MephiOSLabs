@@ -1,56 +1,33 @@
 #include <stdio.h>
-#include <fcntl.h>
 #include <unistd.h>
-#include <string.h>
+#include <sys/wait.h>
 
 /*
-Написать программу, которая выводит на экран содержимое файла в обратном порядке: 
-сначала выводится последний символ файла, затем предпоследний и так далее до первого. 
-Использовать lseek и read.
+Создать (с помощью связки fork - exec) параллельный процесс. 
+Имя исполняемого файла для exec передается с помощью аргумента командной строки. 
+Передать в порожденный процесс некоторую информацию через список параметров (список аргументов в функции main). 
+Каждый процесс (и родительский, и порожденный) должен вывести на экран список переданных ему аргументов и свое окружение.
 */
 
-int q10(char* arg)
+extern char** environ;
+int q10(int argc, char* argv[])
 {
-    printf("=== question 10 start ===\n\n");
+    int pid = fork();
 
-    char file_name[255];
+    if (pid < 0) return catch();
 
-    if (arg == NULL || sizeof(arg) == 0)
+    if (pid > 0)
     {
-        printf("Enter source file name:\n");
-        scanf("%255s", &file_name);
+        int status;
+        wait(&status);
+        
+        printf("Current process name: %s\n", argv[0]);
+        printArgs(argc, argv);
+        printCurrentEnvironment(environ);
+        printf("\n");
     }
-    else
-        strcpy(file_name, arg);
-
-    int bytes_size = 1;
-
-    int fd = open(&file_name, O_RDONLY);
-    if (catch() < 0) return -1;
-
-    int file_size = lseek(fd, 0, SEEK_END);
-    if (catch() < 0) return -1;
-
-    lseek(fd, 0, SEEK_SET);
-    if (catch() < 0) return -1;
-
-    char fc;
-    while (file_size > 0)
-    {
-        lseek(fd, --file_size, SEEK_SET);
-        if (catch() < 0) return -1;
-
-        read(fd, &fc, bytes_size);
-        if (catch() < 0) return -1;
-
-        putchar(fc);
-    }
-
-    // закрыть
-    close(fd);
-    if (catch() < 0) return -1;
-
-    printf("\n\n==== question 10 end ====\n");
+    else 
+        execv(argv[1], argv + 1);
 
     return 0;
 }
