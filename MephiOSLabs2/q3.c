@@ -1,73 +1,43 @@
 #include <stdio.h>
-#include <fcntl.h>
+#include <sys/types.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 /*
-Повторно выполнить программу п. 2 с теми же исходными данными; 
-проверить результаты выполнения каждого системного вызова. 
-Объяснить полученные результаты.
+Написать программу, в которой процесс порождает новый и позволяет порожденному процессу завершиться. 
+Оба процесса должны выводить свои идентификаторы (процесса, родительского процесса, группы процессов). 
+Проверить идентификатор и статус завершения порожденного процесса. 
+Выполнить данную программу и посмотреть ее результаты.
 */
 
-int q3(char* arg)
+int q3()
 {
-    printf("=== question 3 start ===\n\n");
+    int pid = fork();
 
-    if (arg == NULL || sizeof(arg) == 0) 
+    if (pid < 0) return catch();
+
+    if (pid > 0)
     {
-        printf("please enter the name of file to create as cmd arg!");
-        return -1;
+        int status;
+        if (waitpid(pid, &status, 0) == pid)
+        {
+            printf("\nChild process PID was %d\n", pid);
+            printf("Child process exited with %d status\n\n", status);
+        }
+        else
+            return catch();
     }
+    
+    printPIDs("This");
 
-    // удалить файл, если он существует
-    if (access(arg, F_OK) != -1) remove(arg);
-    else suppress();
+    return 0;
+}
 
-    int bytes_size = 1;
+int printPIDs(char processName[]) {
 
-    // создать новый файл с правом только на чтение
-    int fd = open(arg, O_CREAT | O_WRONLY);
-    if (catch() < 0) return -1;
-    printf("sys call result fd = %d\n", fd);
-
-    // записать в него несколько строк
-    char file_lines[] = "First line test input.\nSecond line test input.\nThird line test input.\n";
-
-    printf("wrote %d bytes to file %s\n", write(fd, file_lines, sizeof(file_lines)), arg);
-    if (catch() < 0) return -1;
-
-    // закрыть
-    printf("sys call close result = %d\n", close(fd));
-    if (catch() < 0) return -1;
-
-    // Повторно открыть данный файл на чтение
-    fd = open(arg, O_RDONLY);
-    if (catch() < 0) return -1;
-    printf("sys call result fd = %d\n", fd);
-
-    // прочитать из него информацию и вывести ее на экран
-    char fc;
-    int bytes_count = read(fd, &fc, bytes_size);
-    while (fc != NULL)
-    {
-        putchar(fc);
-        bytes_count += read(fd, &fc, bytes_size);
-        if (catch() < 0) return -1;
-    }
-    printf("have read %d bytes from file %s\n", bytes_count, arg);
-
-    // закрыть
-    printf("sys call close result = %d\n", close(fd));
-    if (catch() < 0) return -1;
-
-    // Еще раз открыть этот же файл на чтение и запись, 
-    // проверить результат системного вызова open
-    fd = open(arg, O_RDWR);
-    if (fd == -1)
-        return catch();
-    else
-        printf("sys call result fd = %d\n", fd);
-
-    printf("\n==== question 3 end ====\n");
+    printf("%s process PID=%d\n", processName, getpid());
+    printf("%s process PPID=%d\n", processName, getppid());
+    printf("%s process GRPPID=%d\n", processName, getpgrp());
 
     return 0;
 }

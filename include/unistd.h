@@ -199,13 +199,6 @@ __BEGIN_DECLS
    _LFS64_STDIO			Standard I/O supports large files.
    */
 
-#include <bits/posix_opt.h>
-
-/* Get the environment definitions from Unix98.  */
-#if defined __USE_UNIX98 || defined __USE_XOPEN2K
-# include <bits/environments.h>
-#endif
-
 /* Standard file descriptors.  */
 #define	STDIN_FILENO	0	/* Standard input.  */
 #define	STDOUT_FILENO	1	/* Standard output.  */
@@ -602,12 +595,6 @@ extern int nice (int __inc) __THROW __wur;
 /* Terminate program execution with the low-order 8 bits of STATUS.  */
 extern void _exit (int __status) __attribute__ ((__noreturn__));
 
-
-/* Get the `_PC_*' symbols for the NAME argument to `pathconf' and `fpathconf';
-   the `_SC_*' symbols for the NAME argument to `sysconf';
-   and the `_CS_*' symbols for the NAME argument to `confstr'.  */
-#include <bits/confname.h>
-
 /* Get file-specific configuration information about PATH.  */
 extern long int pathconf (const char *__path, int __name)
      __THROW __nonnull ((1));
@@ -860,15 +847,6 @@ extern int getlogin_r (char *__name, size_t __name_len) __nonnull ((1));
 /* Set the login name returned by `getlogin'.  */
 extern int setlogin (const char *__name) __THROW __nonnull ((1));
 #endif
-
-
-#ifdef	__USE_POSIX2
-/* Get definitions and prototypes for functions to process the
-   arguments in ARGV (ARGC of them, minus the program name) for
-   options given in OPTS.  */
-# include <bits/getopt_posix.h>
-#endif
-
 
 #if defined __USE_XOPEN_EXTENDED || defined __USE_XOPEN2K
 /* Put the name of the current host in no more than LEN bytes of NAME.
@@ -1165,9 +1143,6 @@ int getentropy (void *__buffer, size_t __length) __wur;
 #if __USE_FORTIFY_LEVEL > 0 && defined __fortify_function
 # include <bits/unistd.h>
 #endif
-
-/* System-specific extensions.  */
-#include <bits/unistd_ext.h>
 
 __END_DECLS
 

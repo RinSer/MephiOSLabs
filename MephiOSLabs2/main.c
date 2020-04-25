@@ -4,15 +4,15 @@
 
 int main(int argc, char* argv[], char* env[])
 {
-    q1(env);
+    //q1(env);
 
     //q2();
 
-    //q3(argv[1]);
+    //q3();
 
     //q4();
 
-    //q5(argv[1]);
+    q5();
 
     //q6(argv[1]);
 
