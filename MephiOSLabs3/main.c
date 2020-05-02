@@ -22,9 +22,9 @@ int main(int argc, char* argv[], char* env[])
 
     //q9();
 
-    q10();
+    //q10();
 
-    //q11();
+    q11();
 
     return 0;
 }
