@@ -1,67 +1,54 @@
 #include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 /*
-Выполнить п. 8 при условии, что общий файл для чтения открывается в каждом из порожденных процессов.
+Включить в порожденный процесс вместо системного вызова kill 
+системный вызов alarm с перехватом и без перехвата сигнала. 
+Что изменится?
 */
 
-char ParentFileName9[] = "parentCopy9";
-char ChildFileName9[] = "childCopy9";
-
-void onSighup2()
-{
-    signal(SIGHUP, onSighup2); /* reset signal */
-
-    int pfd = open(ParentFileName9, O_RDONLY);
-    catch();
-    int cfd = open(ChildFileName9, O_RDONLY);
-    catch();
-
-    printf("Child prints parent file\n");
-    copyFileTo("", pfd, 1);
-    close(pfd);
-
-    printf("\nChild prints child file\n");
-    copyFileTo("", cfd, 1);
-    close(cfd);
-
-    exit(0);
-}
+void childReaper9(int);
+void childHandler(int);
 
 int q9()
 {
-    int fd;
-    
+    printf("=== question 9 start ===\n\n");
+
+    int signal2child = SIGALRM;
+
     int pid = fork();
 
-    if (pid < 0) return catch();
+    if (pid < 0) return catch ();
 
-    if (pid > 0)
+    if (pid == 0)
     {
-        fd = open("/home/rinser/test8", O_RDONLY);
-        
-        copyFileTo(ParentFileName9, fd, -1);
+        signal(signal2child, childHandler);
 
-        kill(pid, SIGHUP);
+        alarm(2);
 
-        int status;
-        wait(&status);
+        int iterNum = 10001;
+        for (int i = 0; i < iterNum; i++)
+        {
+            printf("Child iteration number %d\n", i);
+        }
     }
     else
     {
-        fd = open("/home/rinser/test8", O_RDONLY);
-        
-        copyFileTo(ChildFileName9, fd, -1);
+        signal(SIGCHLD, childReaper9);
 
-        signal(SIGHUP, onSighup2);
-        for (;;);
+        pause();
     }
 
-    close(fd);
-
     return 0;
+}
+
+void childReaper9(int signum) {
+    int status;
+    int cpid = wait(&status);
+    printf("Child with PID %d has ended with status %d\n", cpid, status);
+    printf("\n==== question 9 end ====\n");
+    exit(0);
 }

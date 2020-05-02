@@ -1,45 +1,50 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 /*
-Модифицировать программу, включив в нее setpgrp в порожденный процесс до того, как он будет выполнять pause. 
-Повлияет ли на порожденный процесс нажатие клавиши прерывания в тот момент, когда родительский процесс "спит"? 
-Будет ли показан порожденный процесс в выводе команды ps?
+Повторить выполнение предыдущих пунктов задания, 
+используя в порожденном процессе вместо вложенных циклов системный вызов pause. 
+Что изменится? Как завершить процесс в случае выполнения с pause п. 4?
 */
+
+void childReaper7(int);
+void childHandler(int);
 
 int q7()
 {
+    printf("=== question 7 start ===\n\n");
+
+    int signal2child = SIGUSR1;
+
     int pid = fork();
 
     if (pid < 0) return catch();
 
-    if (pid > 0)
+    if (pid == 0)
     {
-        printPIDs("Parent");
-
+        //signal(signal2child, childHandler);
+        
         pause();
-
-        int status;
-        if (waitpid(pid, &status, 0) == pid)
-        {
-            printf("\nChild process PID was %d\n", pid);
-            printf("Child process exited with %d status\n\n", status);
-        }
-        else
-            return catch();
     }
     else
     {
-        char processName[] = "Child";
-        
-        printPIDs(processName);
+        signal(SIGCHLD, childReaper7);
 
-        printf("%s process new GRPPID=%d\n", processName, setpgrp());
+        //kill(pid, signal2child);
 
         pause();
     }
 
     return 0;
+}
+
+void childReaper7(int signum) {
+    int status;
+    int cpid = wait(&status);
+    printf("Child with PID %d has ended with status %d\n", cpid, status);
+    printf("\n==== question 7 end ====\n");
+    exit(0);
 }

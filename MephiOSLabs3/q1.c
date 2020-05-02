@@ -12,7 +12,7 @@ void onSignal(int);
 
 int defaultHandler;
 
-int q1(char* env[])
+int q1()
 {
     printf("=== question 1 start ===\n\n");
     

@@ -1,22 +1,39 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>
 
 /*
-Кто выполняется первым после fork: отец или сын? 
-Написать программу, которую можно использовать для проверки данной ситуации.
+Модифицировать программу п.1 так, чтобы вместо signal использовать sigaction.
 */
+
+void onSignal2(int);
+
+struct sigaction defaultAction;
 
 int q2()
 {
-    int pid = fork();
+    printf("=== question 2 start ===\n\n");
 
-    if (pid < 0) return catch();
+    struct sigaction newAction;
+    if (sigemptyset(&newAction.sa_mask) < 0)
+        return catch();
+    newAction.sa_handler = onSignal2;
+    newAction.sa_flags = 0;
 
-    if (pid == 0)
-        printf("This is child process output\n");
-    else
-        printf("This is parent process output\n");
+    if (sigaction(SIGINT, &newAction, &defaultAction) < 0)
+        return catch();
+
+    for (;;);
 
     return 0;
+}
+
+void onSignal2(int signum) {
+    printf("Exiting on signal %d\n", signum);
+
+    sigaction(signum, &defaultAction, NULL);
+
+    printf("\n==== question 2 end ====\n");
+
+    raise(signum);
 }

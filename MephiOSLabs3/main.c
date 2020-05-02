@@ -4,7 +4,7 @@
 
 int main(int argc, char* argv[], char* env[])
 {
-    q1();
+    //q1();
 
     //q2();
 
@@ -22,11 +22,9 @@ int main(int argc, char* argv[], char* env[])
 
     //q9();
 
-    //q10(argc, argv);
+    q10();
 
-    //q11(argc, argv);
-
-    //argenv(argc, argv);
+    //q11();
 
     return 0;
 }

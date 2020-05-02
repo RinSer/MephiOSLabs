@@ -1,43 +1,44 @@
 #include <stdio.h>
-#include <sys/types.h>
-#include <unistd.h>
+#include <stdlib.h>
+#include <signal.h>
 #include <sys/wait.h>
+#include <unistd.h>
 
 /*
-Написать программу, в которой процесс порождает новый и позволяет порожденному процессу завершиться. 
-Оба процесса должны выводить свои идентификаторы (процесса, родительского процесса, группы процессов). 
-Проверить идентификатор и статус завершения порожденного процесса. 
-Выполнить данную программу и посмотреть ее результаты.
+Написать программу, исключающую появление зомби для завершающихся порожденных процессов.
 */
+
+void childReaper(int);
 
 int q3()
 {
+    printf("=== question 3 start ===\n\n");
+
+    signal(SIGCHLD, childReaper);
+
     int pid = fork();
 
     if (pid < 0) return catch();
 
     if (pid > 0)
     {
-        int status;
-        if (waitpid(pid, &status, 0) == pid)
-        {
-            printf("\nChild process PID was %d\n", pid);
-            printf("Child process exited with %d status\n\n", status);
-        }
-        else
-            return catch();
+        printf("%d's parent went to sleep\n", pid);
+        pause();
     }
-    
-    printPIDs("This");
+    else
+    {
+        printf("PID %d wants to become Zombie\n", getpid());
+        exit(0);
+    }
 
     return 0;
 }
 
-int printPIDs(char processName[]) {
-
-    printf("%s process PID=%d\n", processName, getpid());
-    printf("%s process PPID=%d\n", processName, getppid());
-    printf("%s process GRPPID=%d\n", processName, getpgrp());
-
-    return 0;
+void childReaper(int signum) {
+    int status;
+    int cpid = wait(&status);
+    printf("Child with PID %d has ended with status %d\n", cpid, status);
+    sleep(5);
+    printf("\n==== question 3 end ====\n");
+    exit(0);
 }

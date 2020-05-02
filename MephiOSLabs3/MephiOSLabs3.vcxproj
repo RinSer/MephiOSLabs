@@ -93,6 +93,8 @@
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
     <ClCompile>
       <AdditionalIncludeDirectories>C:\Users\v-seirin\Desktop\МИФИ_АОС\AOSLabs\MephiOSLabs\include;C:\Users\v-seirin\Desktop\МИФИ_АОС\AOSLabs\MephiOSLabs\include\bits;C:\Users\v-seirin\Desktop\МИФИ_АОС\AOSLabs\MephiOSLabs\include\sys;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
+      <CLanguageStandard>gnu99</CLanguageStandard>
+      <CppLanguageStandard>gnu++11</CppLanguageStandard>
     </ClCompile>
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />

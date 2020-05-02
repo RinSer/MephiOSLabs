@@ -1,95 +1,55 @@
 #include <stdio.h>
-#include <string.h>
-#include <fcntl.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <stdlib.h>
 #include <signal.h>
+#include <sys/wait.h>
+#include <unistd.h>
 
 /*
-Открыть файл (достаточно большого размера), доступный для чтения. Имя файла передается из командной строки. 
-После открытия файла создать параллельный процесс с помощью только fork. 
-В обоих процессах создать свои файлы для записи, 
-читать информацию из общего файла и копировать ее в собственные выходные файлы (не на экран). 
-Вывести на экран содержимое полученных файлов из порожденного процесса по окончании записи в файл и из родительского процесса, 
-дождавшись завершения порожденного процесса. 
-Посмотреть, что изменится, если читаемую процессами информацию сразу выводить на экран.
+Включить в порожденный процесс системный вызов signal, 
+переопределяющий стандартную реакцию на сигнал 
+(для внешнего цикла установить в функции максимальное значение параметра цикла). 
+Что изменится?
 */
 
-char ParentFileName[] = "parentCopy8";
-char ChildFileName[] = "childCopy8";
-
-void onSighup()
-{
-    signal(SIGHUP, onSighup); /* reset signal */
-
-    int pfd = open(ParentFileName, O_RDONLY);
-    catch();
-    int cfd = open(ChildFileName, O_RDONLY);
-    catch();
-
-    printf("Child prints parent file\n");
-    copyFileTo("", pfd, 1);
-    close(pfd);
-
-    printf("\nChild prints child file\n");
-    copyFileTo("", cfd, 1);
-    close(cfd);
-
-    exit(0);
-}
+void childReaper8(int);
+void childHandler(int);
 
 int q8()
 {
-    int fd = open("/home/rinser/test8", O_RDONLY);
+    printf("=== question 8 start ===\n\n");
+
+    int signal2child = SIGUSR1;
 
     int pid = fork();
 
-    if (pid < 0) return catch();
+    if (pid < 0) return catch ();
 
-    if (pid > 0)
+    if (pid == 0)
     {
-        copyFileTo(ParentFileName, fd, -1);
+        signal(signal2child, childHandler);
 
-        kill(pid, SIGHUP);
-
-        int status;
-        wait(&status);
+        int iterNum = 1000001;
+        for (int i = 0; i < iterNum; i++)
+        {
+            printf("Child iteration number %d\n", i);
+        }
     }
     else
     {
-        copyFileTo(ChildFileName, fd, -1);
-        
-        signal(SIGHUP, onSighup);
-        for (;;);
-    }
+        signal(SIGCHLD, childReaper8);
 
-    close(fd);
+        kill(pid, signal2child);
+
+        pause();
+    }
 
     return 0;
 }
 
-int copyFileTo(char fileName[], int cpd, int fd) 
-{
-    if (fd < 0)
-    {
-        if (access(fileName, F_OK) != -1) remove(fileName);
-        else suppress();
-        
-        fd = open(fileName, O_RDWR | O_CREAT);
-        catch ();
-    }
-
-    int file_size = lseek(cpd, 0, SEEK_END);
-    lseek(cpd, 0, SEEK_SET);
-
-    char buffer[file_size];
-
-    read(cpd, buffer, file_size);
-
-    write(fd, buffer, file_size);
-
-    if (fd > 1) close(fd);
-    close(cpd);
-
-    return 0;
+void childReaper8(int signum) {
+    int status;
+    int cpid = wait(&status);
+    printf("Child with PID %d has ended with status %d\n", cpid, status);
+    printf("\n==== question 8 end ====\n");
+    exit(0);
 }
