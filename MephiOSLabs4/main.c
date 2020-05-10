@@ -12,9 +12,12 @@ int main(int argc, char* argv[], char* env[])
 
     //q4();
 
-    q5();
+    //q5();
 
-    //q6();
+    q6();
+    //q6receive();
+    //q6_non_blocking();
+    //q6receive2();
 
     //q7();
 
