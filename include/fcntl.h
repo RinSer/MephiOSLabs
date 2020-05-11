@@ -2,6 +2,8 @@
 #ifndef _ASM_GENERIC_FCNTL_H
 #define _ASM_GENERIC_FCNTL_H
 
+#include <sys/types.h>
+
 /*
  * FMODE_EXEC is 0x20
  * FMODE_NONOTIFY is 0x4000000

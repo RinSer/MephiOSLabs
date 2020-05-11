@@ -1,63 +1,51 @@
-#include <stdio.h>
+#include <fcntl.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <sys/types.h>
+#include <stdio.h>
 #include <unistd.h>
+#include <sys/wait.h>
 
 /*
-Написать программу, позволяющую использовать sigaction для реализации примера синхронизации процессов. 
-Выполнить эту программу и объяснить ее поведение. Использовать sigsuspend и sigprocmask.
+Повторить выполнение п. 10, 
+включив в процессы для синхронизации работы с терминалом использование режима слабой блокировки. 
+Как изменится поведение процессов?
 */
-
-volatile sig_atomic_t no_interrupt = 1;
-void sync_signal(int);
 
 int q11()
 {
-    printf("=== question 11 start ===\n\n");
+    char buff[1];
 
-    int signal2wait = SIGUSR1;
+    int child_pid = fork();
+    if (child_pid < 0)
+        return catch();
 
-    int pid = fork();
-
-    if (pid > 0)
+    if (child_pid > 0)
     {
-        struct sigaction on_signal;
-        if (sigfillset(&on_signal.sa_mask) < 0)
-            return catch();
-        on_signal.sa_handler = sync_signal;
-        on_signal.sa_flags = 0;
-        if (sigaction(signal2wait, &on_signal, NULL) < 0)
-            return catch();
+        struct flock lock;
+        
+        /*lock.l_start = 0;
+        lock.l_whence = SEEK_CUR;
+        lock.l_len = 0;
+        lock.l_pid = getpid();
+        lock.l_type = F_RDLCK;*/
 
-        sigset_t mask;
-        /*if (sigfillset(&mask) +
-            sigdelset(&mask, signal2wait) < 0)
-            return catch();*/
-        if (sigprocmask(SIG_BLOCK, NULL, &mask) < 0)
+        if (fcntl(STDIN_FILENO, F_GETLK, &lock) < 0)
             return catch();
-
-        while (no_interrupt)
-            sigsuspend(&mask);
-    }
-    else 
-    {
-        for (int i = 1; i < 11; i++)
+        for (;;)
         {
-            printf("Child iteration number %d\n", i);
-            sleep(1);
+            read(STDIN_FILENO, buff, sizeof(buff));
+            printf("Parent output:\n");
+            write(STDOUT_FILENO, buff, sizeof(buff));
         }
-        kill(getppid(), signal2wait);
-        exit(0);
     }
-
-    printf("\n==== question 11 end ====\n");
+    else
+    {
+        for (;;)
+        {
+            read(STDIN_FILENO, buff, sizeof(buff));
+            printf("Child output:\n");
+            write(STDOUT_FILENO, buff, sizeof(buff));
+        }
+    }
 
     return 0;
-}
-
-void sync_signal(int signum)
-{
-    printf("Parent proceeds after wait on signal %d\n", signum);
-    no_interrupt = 0;
 }
