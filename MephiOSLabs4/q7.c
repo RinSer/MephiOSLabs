@@ -1,50 +1,53 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <signal.h>
-#include <sys/wait.h>
+#include <fcntl.h>
 #include <unistd.h>
 
 /*
-Повторить выполнение предыдущих пунктов задания, 
-используя в порожденном процессе вместо вложенных циклов системный вызов pause. 
-Что изменится? Как завершить процесс в случае выполнения с pause п. 4?
+Создать два параллельных процесса, 
+в каждом из которых осуществляется работа с одним и тем же файлом. 
+Каждый процесс открывает файл (имя файла передается через список аргументов командной строки). 
+Один процесс пишет в файл, другой - читает из него. Что произойдет без включения блокировок?
 */
 
-void childReaper7(int);
-void childHandler(int);
-
-int q7()
+int q7(char* file_path)
 {
     printf("=== question 7 start ===\n\n");
 
-    int signal2child = SIGUSR1;
+    int fd;
+    char buff[1];
+    int child_pid = fork();
 
-    int pid = fork();
+    if (child_pid < 0)
+        return catch();
 
-    if (pid < 0) return catch();
-
-    if (pid == 0)
+    if (child_pid > 0)
     {
-        //signal(signal2child, childHandler);
-        
-        pause();
+        fd = open(file_path, O_RDONLY);
+        if (fd < 0)
+            return catch();
+
+        while (read(fd, buff, sizeof(buff)) > 0)
+            write(STDOUT_FILENO, buff, sizeof(buff));
+
+        close(fd);
     }
     else
     {
-        signal(SIGCHLD, childReaper7);
+        fd = open(file_path, O_WRONLY);
+        if (fd < 0)
+            return catch();
 
-        //kill(pid, signal2child);
+        char test_line[] = "Write something to the file\n";
 
-        pause();
+        write(fd, test_line, sizeof(test_line) - 1);
+
+        close(fd);
+
+        exit(0);
     }
+    
+    printf("\n==== question 7 end ====\n");
 
     return 0;
-}
-
-void childReaper7(int signum) {
-    int status;
-    int cpid = wait(&status);
-    printf("Child with PID %d has ended with status %d\n", cpid, status);
-    printf("\n==== question 7 end ====\n");
-    exit(0);
 }

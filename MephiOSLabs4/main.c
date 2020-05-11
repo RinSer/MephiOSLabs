@@ -14,16 +14,17 @@ int main(int argc, char* argv[], char* env[])
 
     //q5();
 
-    q6();
+    //q6();
     //q6receive();
     //q6_non_blocking();
     //q6receive2();
 
-    //q7();
+    //q7(argv[1]);
 
-    //q8();
+    //q8(argv[1]);
 
-    //q9();
+    //q9(argv[1]);
+    //q9_lock_check(argv[1]);
 
     //q10();
 
