@@ -35,7 +35,7 @@
     </ProjectConfiguration>
   </ItemGroup>
   <PropertyGroup Label="Globals">
-    <ProjectGuid>{4297c329-5ec4-486a-93ec-dcbf1f9e7955}</ProjectGuid>
+    <ProjectGuid>{4d69a786-19c1-4d59-8a28-a7eb5c7db1da}</ProjectGuid>
     <Keyword>Linux</Keyword>
     <RootNamespace>MephiOSLabs5</RootNamespace>
     <MinimumVisualStudioVersion>15.0</MinimumVisualStudioVersion>
@@ -59,7 +59,6 @@
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
     <UseDebugLibraries>true</UseDebugLibraries>
-    <PlatformToolset>WSL_1_0</PlatformToolset>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Release|x64'" Label="Configuration">
     <UseDebugLibraries>false</UseDebugLibraries>
@@ -91,10 +90,7 @@
     <ClCompile Include="q9.c" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">
-    <ClCompile>
-      <AdditionalIncludeDirectories>C:\Users\v-seirin\Desktop\МИФИ_АОС\AOSLabs\MephiOSLabs\include;C:\Users\v-seirin\Desktop\МИФИ_АОС\AOSLabs\MephiOSLabs\include\sys;C:\Users\v-seirin\Desktop\МИФИ_АОС\AOSLabs\MephiOSLabs\include\bits;%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
-      <CLanguageStandard>gnu99</CLanguageStandard>
-    </ClCompile>
+    <ClCompile />
   </ItemDefinitionGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets" />
