@@ -4,15 +4,16 @@
 
 int main(int argc, char* argv[], char* env[])
 {
-    q1();
+    //q1();
 
-    //q2();
+    q2_send();
+    //q2_receive(argv[1], argv[2]);
 
-    //q3();
+    //q3(argv[1], argv[2]);
 
-    //q4();
+    //q4(argv[1], argv[2]);
 
-    //q5();
+    //q5(argv[1]);
 
     //q6();
     //q6receive();

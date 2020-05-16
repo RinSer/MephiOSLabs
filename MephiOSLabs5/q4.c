@@ -1,59 +1,43 @@
-#include <fcntl.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
+#include <string.h>
+#include <qhelper.h>
 
 /*
-Повторить п. 2, создавая параллельные процессы с помощью связки fork - exec. 
-Как передать дескрипторы канала в порожденный процесс?
+Модифицировать программу п. 2, 
+позволив ей принимать первые несколько байтов сообщений произвольных размеров.
 */
 
-int q4()
+#define MSG_BUFF_SIZE 0
+
+typedef struct message_4q_q4 {
+    long type;
+    char payload[MSG_BUFF_SIZE];
+};
+
+int q4(char* arg1, char* arg2)
 {
-    printf("=== question 4 start ===\n\n");
-
-    char char_buff[1];
-    int write_to_parent[2];
-
-    if (pipe(write_to_parent) < 0)
-        return catch();
-
-    char* file_desc = malloc(255);
-    sprintf(file_desc, "%d", write_to_parent[1]);
-
-    int child_pid = fork();
-
-    if (child_pid > 0)
+    if (arg1 == NULL || arg2 == NULL)
     {
-        close(write_to_parent[1]);
-
-        while (read(write_to_parent[0], char_buff, sizeof(char_buff)) > 0)
-            write(STDOUT_FILENO, char_buff, sizeof(char_buff));
-
-        close(write_to_parent[0]);
-    }
-    else
-    {
-        close(write_to_parent[0]);
-        execl("q4exec", "q4exec", file_desc);
+        printf("Should get params Queue ID and Message type!\n");
+        return -1;
     }
 
-    free(file_desc);
+    int qid = atoi(arg1);
+    int rcv_type = atoi(arg2);
+    struct message_4q_q4* msg = malloc(sizeof(struct message_4q_q4));
 
-    printf("\n==== question 4 end ====\n");
-
-    return 0;
-}
-
-int q4exec(char* write_fd) 
-{
-    int fd = atoi(write_fd);
+    printf("\nGet messages from the queue:\n");
+    while (msgrcv(qid, msg, sizeof(struct message_4q_q4), rcv_type, MSG_NOERROR | IPC_NOWAIT) > 0)
+        printf("%s received with type %d\n", msg->payload, (int)msg->type);
     
-    char child_message[] = "This should be parent's output\n";
+    free(msg);
 
-    write(fd, child_message, sizeof(child_message) - 1);
-
-    close(fd);
+    try_close_queue(qid);
 
     return 0;
 }

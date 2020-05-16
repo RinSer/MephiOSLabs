@@ -5,21 +5,13 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
+#include <qhelper.h>
 
 /*
 Создать очередь сообщений или получить доступ к уже существующей очереди. 
 Вывести на экран статистическую информацию об очереди сообщений. 
 Поместить несколько сообщений различных типов в очередь.
 */
-
-#define MMSGQP "my_message_queue"
-#define MSG_SIZE 9
-#define MSG_NUM 6
-
-typedef struct {
-    long type;
-    char payload[MSG_SIZE];
-} message_4q;
 
 int q1()
 {
@@ -40,7 +32,7 @@ int q1()
     {
         char msg[MSG_SIZE];
         sprintf(&msg, "Message%d", i);
-        message_4q message;
+        struct message_4q message;
         message.type = snd_types[i];
         strcpy(message.payload, msg);
         if (msgsnd(qid, &message, sizeof(message), IPC_NOWAIT) < 0)
@@ -54,7 +46,7 @@ int q1()
     int rcv_types[MSG_NUM] = { 1, 2, 3, 1, 2, 3 };
     for (int i = 0; i < MSG_NUM; i++)
     {
-        message_4q msg;
+        struct message_4q msg;
         if (msgrcv(qid, &msg, sizeof(msg), rcv_types[i], IPC_NOWAIT) < 0)
             return catch();
         printf("%s received with type %d\n", msg.payload, (int)msg.type);

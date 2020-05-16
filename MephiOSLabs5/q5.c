@@ -1,43 +1,26 @@
-#include <fcntl.h>
-#include <stdlib.h>
 #include <stdio.h>
-#include <unistd.h>
-#include <sys/wait.h>
+#include <stdlib.h>
+#include <sys/msg.h>
 
 /*
-С помощью системных вызовов pipe и dup реализовать конвейер: who | wc -l.
+Написать программу, позволяющую удалять очереди сообщений по идентификатору. 
+Обработать возможные ошибочные ситуации.
 */
 
-int q5()
+int q5(char* arg)
 {
-    printf("=== question 5 start ===\n\n");
-
-    int pipe_fds[2];
-
-    pipe(pipe_fds);
-
-    if (fork() == 0)
+    if (arg == NULL)
     {
-        close(pipe_fds[0]);
-
-        dup2(pipe_fds[1], STDOUT_FILENO);
-
-        system("who");
-
-        exit(0);
-    }
-    else
-    {
-        close(pipe_fds[1]);
-
-        wait(NULL);
-
-        dup2(pipe_fds[0], STDIN_FILENO);
-
-        system("wc -l");
+        printf("Should get params Queue ID!\n");
+        return -1;
     }
 
-    printf("\n==== question 5 end ====\n");
+    int qid = atoi(arg);
+
+    if (msgctl(qid, IPC_RMID, NULL) < 0)
+        return catch();
+
+    printf("Have successfully closed Queue with ID %d\n", qid);
 
     return 0;
 }

@@ -1,50 +1,59 @@
-#include <fcntl.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
+#include <string.h>
+#include <qhelper.h>
 
 /*
-Модифицировать программу п. 1 таким образом, 
-чтобы родительский процесс читал из канала в цикле, 
-пока не встретится конец файла (порожденный процесс может записывать в канал информацию, 
-читаемую им из стандартного входного потока). 
-Как избежать бесконечного ожидания родительским процессом чтения из пустого канала?
+Написать программу, позволяющую читать сообщения из очереди и выводить их на экран. 
+Идентификатор очереди и тип сообщения передается через аргументы командной строки.
 */
 
-int q2()
+int q2_receive(char* arg1, char* arg2)
 {
-    printf("=== question 2 start ===\n\n");
-
-    char child_message[] = "This should be parent's output\n";
-    char char_buff[1];
-    int write_to_parent[2];
-
-    if (pipe(write_to_parent) < 0)
-        return catch ();
-
-    int child_pid = fork();
-
-    if (child_pid > 0)
+    if (arg1 == NULL || arg2 == NULL)
     {
-        close(write_to_parent[1]);
-
-        while (read(write_to_parent[0], char_buff, sizeof(char_buff)) > 0)
-            write(STDOUT_FILENO, char_buff, sizeof(char_buff));
-
-        close(write_to_parent[0]);
+        printf("Should get params Queue ID and Message type!\n");
+        return -1;
     }
-    else
-    {
-        close(write_to_parent[0]);
+    
+    int qid = atoi(arg1);
+    int rcv_type = atoi(arg2);
+    struct message_4q msg;
 
-        write(write_to_parent[1], child_message, sizeof(child_message) - 1);
-
-        close(write_to_parent[1]);
-
-        exit(0);
-    }
-
-    printf("\n==== question 2 end ====\n");
+    printf("\nGet messages from the queue:\n");
+    while (msgrcv(qid, &msg, sizeof(msg), rcv_type, NULL) > 0)
+        printf("%s received with type %d\n", msg.payload, (int)msg.type);
 
     return 0;
+}
+
+int q2_send()
+{
+    int pid = getpid();
+    key_t msg_key = ftok(MMSGQP, pid);
+    if (msg_key < 0) return catch();
+
+    int qid = msgget(msg_key, 0666 | IPC_CREAT);
+    if (qid < 0) return catch();
+
+    printf("Have opened the queue with ID %d\n", qid);
+
+    int snd_types[MSG_NUM] = { 1, 1, 2, 2, 3, 3 };
+    for (int i = 0; i < MSG_NUM; i++)
+    {
+        char msg[MSG_SIZE];
+        sprintf(&msg, "Message%d", i);
+        struct message_4q message;
+        message.type = snd_types[i];
+        strcpy(message.payload, msg);
+        if (msgsnd(qid, &message, sizeof(message), IPC_NOWAIT) < 0)
+            return catch();
+        printf("Have sent message with type %d\n", snd_types[i]);
+    }
+
+    printf("Have sent all messages!\n");
 }

@@ -1,70 +1,50 @@
-#include <fcntl.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdlib.h>
 #include <unistd.h>
+#include <time.h>
+#include <string.h>
+#include <qhelper.h>
 
 /*
-Модифицировать программу п. 2 таким образом, 
-чтобы процессы реализовали двунаправленную связь (диалог).
+Модифицировать программу п. 2, 
+позволив ей избежать ожидания в случае отсутствия в очереди сообщений данного типа.
 */
 
-int q3()
+int q3(char* arg1, char* arg2)
 {
-    printf("=== question 3 start ===\n\n");
-
-    char child_message[] = "This should be parent's output\n";
-    char parent_message[] = "This should be child's output\n";
-    char char_buff[1];
-    int write_to_child[2], write_to_parent[2];
-
-    if (pipe(write_to_child) < 0)
-        return catch();
-    if (pipe(write_to_parent) < 0)
-        return catch();
-
-    int child_pid = fork();
-
-    if (child_pid > 0)
+    if (arg1 == NULL || arg2 == NULL)
     {
-        close(write_to_child[0]);
-
-        int i = 0;
-        write(write_to_child[1], &parent_message[i], sizeof(char_buff));
-        while (read(write_to_parent[0], char_buff, sizeof(char_buff)) > 0)
-        {
-            write(STDOUT_FILENO, char_buff, sizeof(char_buff));
-            if (i < sizeof(parent_message) - 1)
-                write(write_to_child[1], &parent_message[++i], sizeof(char_buff));
-            if (i == sizeof(parent_message) - 1)
-            {
-                close(write_to_child[1]);
-                close(write_to_parent[1]);
-            }
-        }
-        close(write_to_parent[0]);
-    }
-    else
-    {
-        close(write_to_parent[0]);
-
-        int i = 0;
-        write(write_to_parent[1], &child_message[i], sizeof(char_buff));
-        while (read(write_to_child[0], char_buff, sizeof(char_buff)) > 0)
-        {
-            write(STDOUT_FILENO, char_buff, sizeof(char_buff));
-            if (i < sizeof(child_message) - 1)
-                write(write_to_parent[1], &child_message[++i], sizeof(char_buff));
-            if (i == sizeof(child_message) - 1)
-            {
-                close(write_to_parent[1]);
-                close(write_to_child[1]);
-            }
-        }
-        close(write_to_child[0]);
-        exit(0);
+        printf("Should get params Queue ID and Message type!\n");
+        return -1;
     }
 
-    printf("\n==== question 3 end ====\n");
+    int qid = atoi(arg1);
+    int rcv_type = atoi(arg2);
+    struct message_4q *msg = malloc(sizeof(struct message_4q));
+
+    printf("\nGet messages from the queue:\n");
+    while (msgrcv(qid, msg, sizeof(struct message_4q), rcv_type, IPC_NOWAIT) > 0)
+        printf("%s received with type %d\n", msg->payload, (int)msg->type);
+    
+    free(msg);
+
+    try_close_queue(qid);
 
     return 0;
+}
+
+/*
+    Удаляем очередь, если она пуста
+*/
+void try_close_queue(int qid)
+{
+    // close the queue if it is empty
+    struct msqid_ds queue_stats;
+    if (msgctl(qid, IPC_STAT, &queue_stats) < 0)
+        catch();
+    if ((int)queue_stats.msg_qnum == 0)
+        if (msgctl(qid, IPC_RMID, NULL) < 0)
+            catch();
 }
