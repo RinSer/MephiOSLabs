@@ -6,7 +6,7 @@ int main(int argc, char* argv[], char* env[])
 {
     //q1();
 
-    q2_send();
+    //q2_send();
     //q2_receive(argv[1], argv[2]);
 
     //q3(argv[1], argv[2]);
@@ -15,10 +15,8 @@ int main(int argc, char* argv[], char* env[])
 
     //q5(argv[1]);
 
-    //q6();
-    //q6receive();
-    //q6_non_blocking();
-    //q6receive2();
+    //q6_server();
+    q6_client();
 
     //q7(argv[1]);
 

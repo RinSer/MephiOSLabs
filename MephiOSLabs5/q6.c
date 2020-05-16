@@ -1,120 +1,100 @@
-#include <fcntl.h>
-#include <stdlib.h>
 #include <stdio.h>
+#include <sys/ipc.h>
+#include <sys/msg.h>
+#include <stdlib.h>
 #include <unistd.h>
-#include <sys/wait.h>
+#include <time.h>
+#include <string.h>
+#include <qhelper.h>
 
 /*
-Создать именованный канал (любым способом). 
-Убедиться, что канал создан. 
-Рассмотреть особенности работы с именованным каналом 
-(открыть файл с установленным и не установленным флагом O_NDELAY). 
-Использовать его для обмена информацией с процессом, 
-созданным другим пользователем (своим соседом).
+Написать программы для работы с очередями сообщений в соответствии с моделью клиент-сервер: 
+каждый процесс использует собственную очередь сообщений. 
+Процесс-сервер читает запросы из своей очереди сообщений и посылает ответ процессам-клиентам в их очереди. 
+Процессы-клиенты читают ответ и выводят его в выходной поток. 
+Процессы-клиенты должны передавать процессу-серверу информацию о своих очередях сообщений (куда записывать ответ).
 */
 
-#define PIPE_PATH "/tmp/pipe6"
-#define NEXT_LINE '\n'
+#define SERVER_MSGQ  "server_message_queue"
+#define CS_MSG_SIZE 100
+#define CS_PROJECT_ID 25
 
-int q6()
+typedef struct message_cs {
+    long type;
+    char payload[CS_MSG_SIZE];
+};
+
+int q6_client()
 {
-    printf("=== question 6 start ===\n\n");
-
-    char* message = NULL;
-    size_t message_size;
-
-    if (mkfifo(PIPE_PATH, 0666) < 0)
-        return catch();
-
-    int pipe_fd = open(PIPE_PATH, O_CREAT | O_WRONLY);
-    if (pipe_fd < 0)
-        return catch();
-
-    printf("Channel has opened, write your message:\n");
-
-    char buf[1];
-    while (buf[0] != NEXT_LINE)
-    {
-        read(STDIN_FILENO, buf, sizeof(buf));
-        write(pipe_fd, buf, sizeof(buf));
-    }
+    int pid = getpid();
+    char client_queue[12];
+    sprintf(client_queue, "%d", pid);
+    int fd = fopen(client_queue, "w+");
+    if (fd < 0) return catch();
+    close(fd);
     
-    close(pipe_fd);
+    int qid_snd = open_queue(SERVER_MSGQ);
+    int qid_rcv = open_queue(client_queue);
+    
+    struct message_cs msg;
+    msg.type = qid_rcv;
+    strcpy(msg.payload, "I am your new client!");
 
-    unlink(PIPE_PATH);
+    msgsnd(qid_snd, &msg, sizeof(msg), NULL);
 
-    printf("\n==== question 6 end ====\n");
-
-    return 0;
-}
-
-int q6receive() {
-    int pipe_fd = open(PIPE_PATH, O_RDONLY);
-    if (pipe_fd < 0)
-        return catch();
-
-    printf("Message received from channel:\n");
-
-    char buf[1];
-    while (read(pipe_fd, buf, sizeof(buf)) > 0)
-        write(STDOUT_FILENO, buf, sizeof(buf));
-
-    close(pipe_fd);
-
-    unlink(PIPE_PATH);
-
-    return 0;
-}
-
-int q6_non_blocking()
-{
-    printf("=== question 6 start ===\n\n");
-
-    char* message = NULL;
-    size_t message_size;
-
-    int pipe_fd = open(PIPE_PATH, O_WRONLY | O_NONBLOCK);
-    if (pipe_fd < 0)
-        return catch();
-
-    printf("Channel has opened, write your message:\n");
-
-    char buf[1];
-    while (buf[0] != NEXT_LINE)
+    while (msgrcv(qid_rcv, &msg, sizeof(msg), qid_rcv, NULL) > 0)
     {
-        read(STDIN_FILENO, buf, sizeof(buf));
-        write(pipe_fd, buf, sizeof(buf));
+        printf("Message from Server: %s\n", msg.payload);
+        char buff[37];
+        sprintf(buff, "Client %d is still alive...", pid);
+        strcpy(msg.payload, buff);
+        msgsnd(qid_snd, &msg, sizeof(msg), NULL);
     }
 
-    close(pipe_fd);
-
-    unlink(PIPE_PATH);
-
-    printf("\n==== question 6 end ====\n");
-
     return 0;
 }
 
-int q6receive2() {
-    if (mkfifo(PIPE_PATH, 0666) < 0)
-        return catch();
-    
-    int pipe_fd = open(PIPE_PATH, O_CREAT | O_RDONLY | O_NONBLOCK);
-    if (pipe_fd < 0)
-        return catch();
+int q6_server()
+{
+    int size = 0;
+    int* clients = malloc(size * sizeof(int));
 
-    printf("Message received from channel:\n");
+    int qid_rcv = open_queue(SERVER_MSGQ);
 
-    char buf[1];
-    while (read(pipe_fd, buf, sizeof(buf)) <= 0) {}
-    write(STDOUT_FILENO, buf, sizeof(buf));
+    struct message_cs msg;
 
-    while (read(pipe_fd, buf, sizeof(buf)) > 0)
-        write(STDOUT_FILENO, buf, sizeof(buf));
+    while (msgrcv(qid_rcv, &msg, sizeof(msg), 0, NULL) > 0)
+    {
+        int client_type = msg.type;
+        int client_idx = contains(clients, size, client_type);
+        if (client_idx == -1)
+        {
+            realloc(clients, size + 1);
+            clients[size] = client_type;
+            size++;
+        }
+        printf("Message received from Client: %s\n", msg.payload);
+        char msg_buff[CS_MSG_SIZE];
+        sprintf(msg_buff, "Hi, dear Client with Queue Id %d!", client_type);
+        strcpy(msg.payload, msg_buff);
+        msgsnd((int)msg.type, &msg, sizeof(msg), NULL);
+    }
+}
 
-    close(pipe_fd);
+int contains(int* array, int size, int value)
+{
+    for (int i = 0; i < size; i++)
+        if (array[i] == value) return i;
+    return -1;
+}
 
-    unlink(PIPE_PATH);
+int open_queue(char* path)
+{
+    key_t msg_key = ftok(path, CS_PROJECT_ID);
+    if (msg_key < 0) return catch();
 
-    return 0;
+    int qid = msgget(msg_key, 0666 | IPC_CREAT);
+    if (qid < 0) return catch();
+
+    return qid;
 }
