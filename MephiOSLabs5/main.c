@@ -19,9 +19,10 @@ int main(int argc, char* argv[], char* env[])
     //q6_client();
 
     //q8_server();
-    q8_client();
+    //q8_client();
 
-    //q10();
+    q10_server();
+    //q10_client();
 
     //q11();
 
