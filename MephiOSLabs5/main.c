@@ -16,14 +16,10 @@ int main(int argc, char* argv[], char* env[])
     //q5(argv[1]);
 
     //q6_server();
-    q6_client();
+    //q6_client();
 
-    //q7(argv[1]);
-
-    //q8(argv[1]);
-
-    //q9(argv[1]);
-    //q9_lock_check(argv[1]);
+    //q8_server();
+    q8_client();
 
     //q10();
 

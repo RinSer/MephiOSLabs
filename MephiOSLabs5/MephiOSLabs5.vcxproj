@@ -85,11 +85,10 @@
     <ClCompile Include="q4.c" />
     <ClCompile Include="q5.c" />
     <ClCompile Include="q6.c" />
-    <ClCompile Include="q7.c" />
     <ClCompile Include="q8.c" />
-    <ClCompile Include="q9.c" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cshelper.h" />
     <ClInclude Include="qhelper.h" />
   </ItemGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">

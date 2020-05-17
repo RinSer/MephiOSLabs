@@ -5,33 +5,31 @@
 #include <unistd.h>
 #include <time.h>
 #include <string.h>
-#include <qhelper.h>
+#include <cshelper.h>
 
 /*
-Написать программы для работы с очередями сообщений в соответствии с моделью клиент-сервер: 
+6. Написать программы для работы с очередями сообщений в соответствии с моделью клиент-сервер: 
 каждый процесс использует собственную очередь сообщений. 
 Процесс-сервер читает запросы из своей очереди сообщений и посылает ответ процессам-клиентам в их очереди. 
 Процессы-клиенты читают ответ и выводят его в выходной поток. 
 Процессы-клиенты должны передавать процессу-серверу информацию о своих очередях сообщений (куда записывать ответ).
++
+7. Осуществить при помощи программ п. 6. обмен сообщениями между несколькими пользователями, при условии, 
+что каждому пользователю предназначены сообщения любого или определенного типа (по договоренности). 
+Будут ли примеры с очередями сообщений "приводить себя в порядок"? 
+Что произойдет, если прервать процесс-сервер с помощью клавиши CTRL-C?
++
+9. Модифицировать программы п. 6 так, чтобы использовались две очереди: 
+одна для запросов к серверу и одна для всех ответов от сервера к любому клиенту.
 */
-
-#define SERVER_MSGQ  "server_message_queue"
-#define CS_MSG_SIZE 100
-#define CS_PROJECT_ID 25
-
-typedef struct message_cs {
-    long type;
-    char payload[CS_MSG_SIZE];
-};
 
 int q6_client()
 {
     int pid = getpid();
     char client_queue[12];
     sprintf(client_queue, "%d", pid);
-    int fd = fopen(client_queue, "w+");
-    if (fd < 0) return catch();
-    close(fd);
+    FILE * fp = fopen(client_queue, "w+");
+    fclose(fp);
     
     int qid_snd = open_queue(SERVER_MSGQ);
     int qid_rcv = open_queue(client_queue);
@@ -56,36 +54,18 @@ int q6_client()
 
 int q6_server()
 {
-    int size = 0;
-    int* clients = malloc(size * sizeof(int));
-
     int qid_rcv = open_queue(SERVER_MSGQ);
 
     struct message_cs msg;
 
     while (msgrcv(qid_rcv, &msg, sizeof(msg), 0, NULL) > 0)
     {
-        int client_type = msg.type;
-        int client_idx = contains(clients, size, client_type);
-        if (client_idx == -1)
-        {
-            realloc(clients, size + 1);
-            clients[size] = client_type;
-            size++;
-        }
         printf("Message received from Client: %s\n", msg.payload);
         char msg_buff[CS_MSG_SIZE];
-        sprintf(msg_buff, "Hi, dear Client with Queue Id %d!", client_type);
+        sprintf(msg_buff, "Hi, dear Client with Queue Id %d!", (int)msg.type);
         strcpy(msg.payload, msg_buff);
         msgsnd((int)msg.type, &msg, sizeof(msg), NULL);
     }
-}
-
-int contains(int* array, int size, int value)
-{
-    for (int i = 0; i < size; i++)
-        if (array[i] == value) return i;
-    return -1;
 }
 
 int open_queue(char* path)
