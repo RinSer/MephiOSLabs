@@ -89,8 +89,16 @@ void get_P(int qid, int L)
 {
     int ppid = getpid();
     int score = 0;
-    int Q;
+    int Q, shmid;
     int num_procs = 3;
+
+    int shm_ids[3];
+    for (int i = 0; i < num_procs; i++)
+    {
+        shm_ids[i] = make_shm(i);
+        send_to_shm(shm_ids[i], -1);
+    }
+
     for (int i = 0; i < num_procs; i++)
     {
         int cpid = fork();
@@ -100,33 +108,31 @@ void get_P(int qid, int L)
         if (ppid != getpid())
         {
             if (i == 0)
-            {
                 Q = get_from_queue(qid, MSG_TO);
-                printf("Inner child PID=%d %d got Q=%d\n", getpid(), i, Q);
-            }
             else
-            {
-                //send_to_shm((i + 1) % num_procs, 0);
-                //Q = get_from_shm(i);
-                printf("Inner child PID=%d %d had exited\n", getpid(), i);
-                exit(0);
-            }
+                Q = get_from_shm(shm_ids[i]);
             for (;;)
             {
-                printf("II Child %d got Q=%d\n", getpid(), Q);
                 if (--Q <= 0)
                 {
                     if (++score == L)
                     {
+                        printf("Inner child %d has Q=%d\n", getpid(), Q);
                         send_to_queue(qid, getpid(), MSG_FROM);
                         exit(0);
                     }
                     Q++;
                 }
-                //send_to_shm((i + 1) % num_procs, Q);
-                //Q = get_from_shm(i);
+                send_to_shm(shm_ids[(i + 1) % num_procs], Q);
+                Q = get_from_shm(shm_ids[i]);
             }
         }
     }
-    while (wait(NULL) > 0) {}
+    
+    if (ppid == getpid())
+    {
+        while (wait(NULL) > 0) {}
+        for (int i = 0; i < num_procs; i++)
+            wipe_shm(shm_ids[i], i);
+    }
 }
