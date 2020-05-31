@@ -42,8 +42,6 @@ int game(int argc, char* argv[])
             for (;;)
             {
                 int pid = getpid();
-                
-                usleep(10);
 
                 printf("Child %d PID=%d got M=%d\n", i, pid, M);
 
