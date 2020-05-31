@@ -4,8 +4,11 @@
 Файл, из которого начальный процесс создает составляющие кольца.
 */
 
+void game_handler(int signum);
 int game(int argc, char* argv[])
 {
+    signal(SIGINT, game_handler);
+    
     if (argc < 3) 
     {
         printf("\nShould receive 3 arguments:\n");
@@ -82,8 +85,16 @@ int game(int argc, char* argv[])
     return 0;
 }
 
+void game_handler(int signum)
+{
+    kill(0, signum);
+}
+
+void get_P_handler(int signum);
 int get_P(int M, int L)
 {
+    signal(SIGINT, get_P_handler);
+    
     int qid = make_queue();
 
     send_to_queue(qid, M, MSG_TO);
@@ -95,6 +106,28 @@ int get_P(int M, int L)
     wipe_queue(qid);
 
     return P;
+}
+
+void get_P_handler(int signum)
+{
+    char queue_file_path[12];
+    sprintf(queue_file_path, "%d", getpid());
+    key_t msg_key = ftok(queue_file_path, 1);
+    int qid = msgget(msg_key, 0666);
+    msgctl(qid, IPC_RMID, NULL);
+    unlink(queue_file_path);
+
+    for (int i = 0; i < 3; i++)
+    {
+        char shm_file_path[16];
+        sprintf(shm_file_path, "shm_%d", i);
+        key_t key = ftok(shm_file_path, 25);
+        int shmid = shmget(key, MAXSIZE, 0666);
+        shmctl(shmid, IPC_RMID, NULL < 0);
+        unlink(shm_file_path);
+    }
+
+    kill(0, SIGKILL);
 }
 
 extern int errno;
