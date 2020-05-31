@@ -13,7 +13,7 @@ int get_from_shm(int shmid)
 
     shmdt(str_number);
     
-    catch();
+    catch("Error getting from shm");
 
     return number;
 }
@@ -24,7 +24,9 @@ void send_to_shm(int shmid, int number)
 
     sprintf(str_number, "%d", number);
 
-    catch();
+    shmdt(str_number);
+
+    catch("Error sending to shm");
 }
 
 int make_shm(int file_id)
@@ -38,7 +40,7 @@ int make_shm(int file_id)
 
     int shmid = shmget(key, MAXSIZE, 0666 | IPC_CREAT);
 
-    catch();
+    catch("Error making shm");
 
     return shmid;
 }
@@ -51,4 +53,6 @@ void wipe_shm(int shmid, int file_id)
     sprintf(shm_file_path, "shm_%d", file_id);
 
     unlink(shm_file_path);
+
+    catch("Error wiping shm");
 }

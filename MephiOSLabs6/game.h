@@ -8,6 +8,7 @@
 #include <sys/msg.h>
 #include <sys/shm.h>
 #include <sys/wait.h>
+#include <errno.h>
 
 #define MAXSIZE 1024 
 

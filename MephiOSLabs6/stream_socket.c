@@ -2,11 +2,11 @@
 
 int get_stream_from_port(int port)
 {
-    int server_fd, new_socket;
+    int sfd, connection;
 
-    if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0
-        || setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &(int){1}, sizeof(int)))
-        return catch();
+    if ((sfd = socket(AF_INET, SOCK_STREAM, 0)) == 0
+        || setsockopt(sfd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &(int){1}, sizeof(int)))
+        catch("Error opening server stream socket");
 
     struct sockaddr_in address;
     int addrlen = sizeof(address);
@@ -14,13 +14,16 @@ int get_stream_from_port(int port)
     address.sin_addr.s_addr = INADDR_ANY;
     address.sin_port = htons(port);
 
-    if (bind(server_fd, (struct sockaddr*)&address,
-        sizeof(address)) < 0 || listen(server_fd, 3) < 0
-        || (new_socket = accept(server_fd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0)
-        return catch();
-
+    if (bind(sfd, (struct sockaddr*)&address,
+        sizeof(address)) < 0 || listen(sfd, 3) < 0
+        || (connection = accept(sfd, (struct sockaddr*)&address, (socklen_t*)&addrlen)) < 0)
+        catch("Error binding to server stream socket");
+    
     char buffer[MAXSIZE];
-    read(new_socket, buffer, MAXSIZE);
+    read(connection, buffer, MAXSIZE);
+
+    close(connection);
+    close(sfd);
 
     return atoi(buffer);
 }
@@ -29,17 +32,18 @@ send_stream_to_port(int port, int number)
 {
     int sock = 0;
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
-        return catch();
-    
+        return catch ();
+
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);
 
     if (connect(sock, (struct sockaddr*)&serv_addr, sizeof(serv_addr)) < 0)
-        return catch();
+        catch("Error connecting to stream socket");
 
     char buffer[MAXSIZE];
     sprintf(buffer, "%d", number);
-    printf("%s\n", buffer);
     send(sock, buffer, strlen(buffer), 0);
+
+    close(sock);
 }

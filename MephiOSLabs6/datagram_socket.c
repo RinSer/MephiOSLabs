@@ -2,10 +2,8 @@
 
 int get_udp_from_port(int port)
 {
-    int sockfd;
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0
-        || setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int)) < 0)
-        return catch();
+    int sockfd = socket(AF_INET, SOCK_DGRAM, 0);
+    setsockopt(sockfd, SOL_SOCKET, SO_REUSEADDR, &(int){1}, sizeof(int));
 
     struct sockaddr_in servaddr, cliaddr;
     memset(&servaddr, 0, sizeof(servaddr));
@@ -14,8 +12,7 @@ int get_udp_from_port(int port)
     servaddr.sin_addr.s_addr = INADDR_ANY;
     servaddr.sin_port = htons(port);
 
-    if (bind(sockfd, (const struct sockaddr*)&servaddr, sizeof(servaddr)) < 0)
-        return catch();
+    bind(sockfd, (const struct sockaddr*)&servaddr, sizeof(servaddr));
 
     int len = sizeof(cliaddr);
     char buffer[MAXSIZE];
@@ -24,14 +21,15 @@ int get_udp_from_port(int port)
 
     close(sockfd);
 
+    catch("Error from get udp port");
+
     return atoi(buffer);
 }
 
 void send_udp_to_port(int port, int number)
 {
     int sockfd, len, n;
-    if ((sockfd = socket(AF_INET, SOCK_DGRAM, 0)) < 0)
-        return catch();
+    sockfd = socket(AF_INET, SOCK_DGRAM, 0);
 
     struct sockaddr_in servaddr;
     memset(&servaddr, 0, sizeof(servaddr));
@@ -45,4 +43,6 @@ void send_udp_to_port(int port, int number)
         (const struct sockaddr*)&servaddr, sizeof(servaddr));
 
     close(sockfd);
+
+    catch("Error from send udp to port");
 }

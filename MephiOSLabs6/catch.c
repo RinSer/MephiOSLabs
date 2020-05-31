@@ -1,22 +1,21 @@
-#include <stdio.h>
-#include <errno.h>
+#include <game.h>
 
 /*
 Функция для ловли ошибок
 */
 
 extern int errno;
-int catch()
+int catch(char* message)
 {
     if (errno > 0)
     {
-        perror("Error");
+        perror(message);
         return -1;
     }
     return 0;
 }
 
-void suppress() 
+void suppress()
 {
     errno = 0;
 }

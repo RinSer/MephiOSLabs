@@ -23,46 +23,48 @@ int game(int argc, char* argv[])
     printf("Starting game N=%d, M=%d, L=%d\n", N, M, L);
 
     int ppid = getpid();
+    int cpids[N];
 
     for (int i = 0; i < N; i++)
     {
-        if (fork() < 0)
-            return catch();
-
-        if (ppid != getpid())
+        int cpid = fork();
+        if (cpid < 0)
+            return catch("Error forking in outer ring");
+        if (cpid > 0)
+            cpids[i] = cpid;
+        else
         {
             if (i == 0)
+                M = get_udp_from_port(ppid);
+            else
+                M = get_stream_from_port(ppid + i);
+            int score = 0;
+            for (;;)
             {
-                int M = get_udp_from_port(ppid);
+                usleep(100);
 
                 printf("Child %d got M=%d\n", i, M);
-                
+
                 int P = get_P(M, L);
 
                 printf("Child %d got P=%d\n", i, P);
 
                 int Q = M - P;
 
-                send_stream_to_port(ppid + 1, Q);
+                if (Q <= 0)
+                {
+                    if (++score >= L)
+                    {
+                        send_udp_to_port(ppid, getpid());
 
-                M = get_stream_from_port(ppid);
+                        exit(0);
+                    }
+                }
+                else M = Q;
 
-                printf("Child %d got M=%d\n", i, M);
-                
-                send_udp_to_port(ppid, getpid());
+                send_stream_to_port(ppid + ((i + 1) % N), M);
 
-                exit(0);
-            }
-            else
-            {
-                int M = get_stream_from_port(ppid + i);
-
-                printf("Child %d got M=%d\n", i, M);
-                sleep(1);
-                
-                send_stream_to_port(ppid + ((i + 1) % N), ++M);
-
-                exit(0);
+                M = get_stream_from_port(ppid + i);
             }
         }
     }
@@ -74,6 +76,9 @@ int game(int argc, char* argv[])
         int winner_pid = get_udp_from_port(ppid);
 
         printf("Winner process has PID=%d\n", winner_pid);
+
+        for (int i = 0; i < N; i++)
+            kill(cpids[i], SIGINT);
     }
 
     return 0;
@@ -94,6 +99,7 @@ int get_P(int M, int L)
     return P;
 }
 
+extern int errno;
 void inner_ring(int qid, int L)
 {
     int ppid = getpid();
@@ -112,7 +118,7 @@ void inner_ring(int qid, int L)
     {
         int cpid = fork();
         if (cpid < 0)
-            return catch();
+            return catch("Error forking in inner ring");
 
         if (ppid != getpid())
         {
@@ -126,7 +132,6 @@ void inner_ring(int qid, int L)
                 {
                     if (++score == L)
                     {
-                        printf("Inner child %d has Q=%d\n", getpid(), Q);
                         send_to_queue(qid, getpid(), MSG_FROM);
                         exit(0);
                     }
@@ -140,7 +145,8 @@ void inner_ring(int qid, int L)
     
     if (ppid == getpid())
     {
-        while (wait(NULL) > 0) {}
+        while (wait(NULL) > 0);
+        errno = 0;
         for (int i = 0; i < num_procs; i++)
             wipe_shm(shm_ids[i], i);
     }
