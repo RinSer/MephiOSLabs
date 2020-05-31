@@ -41,13 +41,15 @@ int game(int argc, char* argv[])
             int score = 0;
             for (;;)
             {
+                int pid = getpid();
+                
                 usleep(100);
 
-                printf("Child %d got M=%d\n", i, M);
+                printf("Child %d PID=%d got M=%d\n", i, pid, M);
 
                 int P = get_P(M, L);
 
-                printf("Child %d got P=%d\n", i, P);
+                printf("Child %d PID=%d got P=%d\n", i, pid, P);
 
                 int Q = M - P;
 
@@ -59,6 +61,7 @@ int game(int argc, char* argv[])
 
                         exit(0);
                     }
+                    printf("Child %d PID=%d got score=%d\n", i, pid, score);
                 }
                 else M = Q;
 
@@ -132,11 +135,13 @@ void inner_ring(int qid, int L)
                 {
                     if (++score == L)
                     {
+                        printf("Inner child %d PID=%d got score=%d\n", i, getpid(), score);
                         send_to_queue(qid, getpid(), MSG_FROM);
                         exit(0);
                     }
                     Q++;
                 }
+                send_to_shm(shm_ids[i], -1);
                 send_to_shm(shm_ids[(i + 1) % num_procs], Q);
                 Q = get_from_shm(shm_ids[i]);
             }
