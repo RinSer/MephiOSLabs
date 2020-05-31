@@ -4,7 +4,7 @@
 Файл, из которого начальный процесс создает составляющие кольца.
 */
 
-int ring_game(int argc, char* argv[])
+int game(int argc, char* argv[])
 {
     if (argc < 3) 
     {
@@ -38,17 +38,15 @@ int ring_game(int argc, char* argv[])
                 printf("Child %d got M=%d\n", i, M);
                 
                 int qid = make_queue();
+
+                send_to_queue(qid, M, MSG_TO);
                 
-                /*get_P(qid, 0);
+                get_P(qid, L);
 
-                send_to_queue(qid, 0, MSG_TO);
-
-                struct game_message msg;
-                msgrcv(qid, &msg, sizeof(msg), MSG_FROM, NULL);
+                M = get_from_queue(qid, MSG_FROM);
 
                 wipe_queue(qid);
 
-                M = atoi(msg.payload);*/
                 printf("Child %d got P=%d\n", i, M);
 
                 send_stream_to_port(ppid + 1, ++M);
@@ -87,11 +85,9 @@ int ring_game(int argc, char* argv[])
     return 0;
 }
 
-
-
 void get_P(int qid, int L)
 {
-    struct game_message msg;
+    int ppid = getpid();
     int score = 0;
     int Q;
     int num_procs = 3;
@@ -101,24 +97,23 @@ void get_P(int qid, int L)
         if (cpid < 0)
             return catch();
 
-        if (cpid == 0)
+        if (ppid != getpid())
         {
             if (i == 0)
             {
-                //send_to_shm((i + 1) % num_procs, 0);
-                msgrcv(qid, &msg, sizeof(msg), MSG_TO, NULL);
-                Q = atoi(msg.payload);
-                printf("Inner child %d got Q=%d\n", i, Q);
+                Q = get_from_queue(qid, MSG_TO);
+                printf("Inner child PID=%d %d got Q=%d\n", getpid(), i, Q);
             }
             else
             {
                 //send_to_shm((i + 1) % num_procs, 0);
                 //Q = get_from_shm(i);
+                printf("Inner child PID=%d %d had exited\n", getpid(), i);
                 exit(0);
             }
             for (;;)
             {
-                //printf("II Child %d got Q=%d\n", i, Q);
+                printf("II Child %d got Q=%d\n", getpid(), Q);
                 if (--Q <= 0)
                 {
                     if (++score == L)
@@ -133,4 +128,5 @@ void get_P(int qid, int L)
             }
         }
     }
+    while (wait(NULL) > 0) {}
 }

@@ -6,16 +6,15 @@
 
 int main(int argc, char* argv[], char* env[])
 {
-    ring_game(argc - 1, &argv[1]);
+    game(argc - 1, &argv[1]);
 
     /*int qid = make_queue();
 
+    send_to_queue(qid, 2, MSG_TO);
+
     get_P(qid, 10);
 
-    send_to_queue(qid, 100, MSG_TO);
-
-    struct game_message msg;
-    msgrcv(qid, &msg, sizeof(msg), MSG_FROM, NULL);
+    printf("%d\n", get_from_queue(qid, MSG_FROM));
 
     wipe_queue(qid);*/
 

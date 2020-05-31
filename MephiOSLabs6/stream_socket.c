@@ -2,7 +2,7 @@
 
 int get_stream_from_port(int port)
 {
-    int server_fd, new_socket, valread;
+    int server_fd, new_socket;
 
     if ((server_fd = socket(AF_INET, SOCK_STREAM, 0)) == 0
         || setsockopt(server_fd, SOL_SOCKET, SO_REUSEADDR | SO_REUSEPORT, &(int){1}, sizeof(int)))
@@ -27,11 +27,10 @@ int get_stream_from_port(int port)
 
 send_stream_to_port(int port, int number)
 {
-    printf("%d %d\n", port, number);
-    int sock = 0, valread;
+    int sock = 0;
     if ((sock = socket(AF_INET, SOCK_STREAM, 0)) < 0)
         return catch();
-    printf("%d", socket);
+    
     struct sockaddr_in serv_addr;
     serv_addr.sin_family = AF_INET;
     serv_addr.sin_port = htons(port);

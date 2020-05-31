@@ -9,7 +9,7 @@ int make_queue()
         return catch();
 
     key_t msg_key = ftok(queue_file_path, 1);
-    if ((int)msg_key < 0) return catch ();
+    if ((int)msg_key < 0) return catch();
 
     int qid = msgget(msg_key, 0666 | IPC_CREAT);
     if (qid < 0) return catch();
@@ -29,13 +29,21 @@ int wipe_queue(int qid)
         return catch();
 }
 
+int get_from_queue(int qid, int type)
+{
+    struct game_message* msg = malloc(sizeof(struct game_message));
+    msgrcv(qid, msg, sizeof(struct game_message), type, NULL);
+    int number = atoi(msg->payload);
+    free(msg);
+    return number;
+}
+
 void send_to_queue(int qid, int number, int type)
 {
-    char buffer[MAXSIZE];
-    struct game_message msg;
-    sprintf(buffer, "%d", number);
-    strcpy(msg.payload, buffer);
-    msg.type = type;
-    if (msgsnd(qid, &msg, sizeof(msg), NULL) < 0)
+    struct game_message* msg = malloc(sizeof(struct game_message));
+    sprintf(msg->payload, "%d", number);
+    msg->type = type;
+    if (msgsnd(qid, msg, sizeof(struct game_message), NULL) < 0)
         return catch();
+    free(msg);
 }
