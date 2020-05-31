@@ -36,7 +36,7 @@ int make_shm(int file_id)
     FILE* fp = fopen(shm_file_path, "w+");
     fclose(fp);
 
-    key_t key = ftok(shm_file_path, 65);
+    key_t key = ftok(shm_file_path, 25);
 
     int shmid = shmget(key, MAXSIZE, 0666 | IPC_CREAT);
 
