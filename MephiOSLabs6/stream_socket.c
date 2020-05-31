@@ -20,11 +20,12 @@ int get_stream_from_port(int port)
         catch("Error binding to server stream socket");
     
     char buffer[MAXSIZE];
-    read(connection, buffer, MAXSIZE);
+    int n = read(connection, buffer, MAXSIZE);
+    buffer[n] = '\0';
 
     close(connection);
     close(sfd);
-
+    
     return atoi(buffer);
 }
 
