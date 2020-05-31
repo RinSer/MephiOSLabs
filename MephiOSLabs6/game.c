@@ -39,19 +39,19 @@ int ring_game(int argc, char* argv[])
                 
                 int qid = make_queue();
                 
-                get_P(qid);
+                /*get_P(qid, 0);
 
-                send_to_queue(qid, M, MSG_TO);
+                send_to_queue(qid, 0, MSG_TO);
 
                 struct game_message msg;
                 msgrcv(qid, &msg, sizeof(msg), MSG_FROM, NULL);
 
                 wipe_queue(qid);
 
-                int P = atoi(msg.payload);
-                printf("Child %d got P=%d\n", i, P);
+                M = atoi(msg.payload);*/
+                printf("Child %d got P=%d\n", i, M);
 
-                send_stream_to_port(ppid + 1, ++P);
+                send_stream_to_port(ppid + 1, ++M);
 
                 M = get_stream_from_port(ppid);
 
@@ -89,33 +89,47 @@ int ring_game(int argc, char* argv[])
 
 
 
-void get_P(int qid)
+void get_P(int qid, int L)
 {
-    char buffer[MAXSIZE];
     struct game_message msg;
-    int pid = getpid();
-    for (int i = 0; i < 3; i++)
+    int score = 0;
+    int Q;
+    int num_procs = 3;
+    for (int i = 0; i < num_procs; i++)
     {
-        if (fork() < 0)
+        int cpid = fork();
+        if (cpid < 0)
             return catch();
 
-        if (pid != getpid())
+        if (cpid == 0)
         {
             if (i == 0)
             {
+                //send_to_shm((i + 1) % num_procs, 0);
                 msgrcv(qid, &msg, sizeof(msg), MSG_TO, NULL);
-
-                int m = atoi(msg.payload);
-
-                printf("Inner child %d got M=%d\n", i, m);
-
-                send_to_queue(qid, ++m, MSG_FROM);
-
-                exit(0);
+                Q = atoi(msg.payload);
+                printf("Inner child %d got Q=%d\n", i, Q);
             }
             else
             {
+                //send_to_shm((i + 1) % num_procs, 0);
+                //Q = get_from_shm(i);
                 exit(0);
+            }
+            for (;;)
+            {
+                //printf("II Child %d got Q=%d\n", i, Q);
+                if (--Q <= 0)
+                {
+                    if (++score == L)
+                    {
+                        send_to_queue(qid, getpid(), MSG_FROM);
+                        exit(0);
+                    }
+                    Q++;
+                }
+                //send_to_shm((i + 1) % num_procs, Q);
+                //Q = get_from_shm(i);
             }
         }
     }

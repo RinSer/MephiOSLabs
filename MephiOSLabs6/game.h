@@ -6,6 +6,7 @@
 #include <arpa/inet.h>
 #include <sys/ipc.h>
 #include <sys/msg.h>
+#include <sys/shm.h>
 
 #define MAXSIZE 1024 
 
