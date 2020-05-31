@@ -43,7 +43,7 @@ int game(int argc, char* argv[])
             {
                 int pid = getpid();
                 
-                usleep(100);
+                usleep(10);
 
                 printf("Child %d PID=%d got M=%d\n", i, pid, M);
 
@@ -117,13 +117,15 @@ void inner_ring(int qid, int L)
         send_to_shm(shm_ids[i], -1);
     }
 
+    int cpids[num_procs];
     for (int i = 0; i < num_procs; i++)
     {
         int cpid = fork();
         if (cpid < 0)
             return catch("Error forking in inner ring");
-
-        if (ppid != getpid())
+        else if (cpid > 0)
+            cpids[i] = cpid;
+        else
         {
             if (i == 0)
                 Q = get_from_queue(qid, MSG_TO);
@@ -153,6 +155,9 @@ void inner_ring(int qid, int L)
         while (wait(NULL) > 0);
         errno = 0;
         for (int i = 0; i < num_procs; i++)
+        {
+            if (kill(cpids[i], SIGINT) < 0) errno = 0;
             wipe_shm(shm_ids[i], i);
+        }
     }
 }
