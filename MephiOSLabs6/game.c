@@ -23,16 +23,14 @@ int game(int argc, char* argv[])
     printf("Starting game N=%d, M=%d, L=%d\n", N, M, L);
 
     int ppid = getpid();
-    int cpids[N];
 
     for (int i = 0; i < N; i++)
     {
         int cpid = fork();
         if (cpid < 0)
             return catch("Error forking in outer ring");
-        if (cpid > 0)
-            cpids[i] = cpid;
-        else
+
+        if (cpid == 0)
         {
             if (i == 0)
                 M = get_udp_from_port(ppid);
@@ -78,8 +76,7 @@ int game(int argc, char* argv[])
 
         printf("Winner process has PID=%d\n", winner_pid);
 
-        for (int i = 0; i < N; i++)
-            kill(cpids[i], SIGINT);
+        kill(0, SIGKILL);
     }
 
     return 0;
@@ -154,7 +151,7 @@ void inner_ring(int qid, int L)
         errno = 0;
         for (int i = 0; i < num_procs; i++)
         {
-            if (kill(cpids[i], SIGINT) < 0) errno = 0;
+            if (kill(cpids[i], SIGKILL) < 0) errno = 0;
             wipe_shm(shm_ids[i], i);
         }
     }
