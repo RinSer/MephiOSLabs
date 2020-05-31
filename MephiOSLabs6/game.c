@@ -113,7 +113,7 @@ void get_P_handler(int signum)
     char queue_file_path[12];
     sprintf(queue_file_path, "%d", getpid());
     key_t msg_key = ftok(queue_file_path, 1);
-    int qid = msgget(msg_key, 0666);
+    int qid = msgget(msg_key, 0666 | IPC_CREAT);
     msgctl(qid, IPC_RMID, NULL);
     unlink(queue_file_path);
 
@@ -122,7 +122,7 @@ void get_P_handler(int signum)
         char shm_file_path[16];
         sprintf(shm_file_path, "shm_%d", i);
         key_t key = ftok(shm_file_path, 25);
-        int shmid = shmget(key, MAXSIZE, 0666);
+        int shmid = shmget(key, MAXSIZE, 0666 | IPC_CREAT);
         shmctl(shmid, IPC_RMID, NULL < 0);
         unlink(shm_file_path);
     }
