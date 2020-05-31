@@ -133,7 +133,7 @@ void inner_ring(int qid, int L)
             {
                 if (--Q <= 0)
                 {
-                    if (++score == L)
+                    if (++score >= L)
                     {
                         printf("Inner child %d PID=%d got score=%d\n", i, getpid(), score);
                         send_to_queue(qid, getpid(), MSG_FROM);
