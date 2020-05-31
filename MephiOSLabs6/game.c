@@ -37,19 +37,13 @@ int game(int argc, char* argv[])
 
                 printf("Child %d got M=%d\n", i, M);
                 
-                int qid = make_queue();
+                int P = get_P(M, L);
 
-                send_to_queue(qid, M, MSG_TO);
-                
-                get_P(qid, L);
+                printf("Child %d got P=%d\n", i, P);
 
-                M = get_from_queue(qid, MSG_FROM);
+                int Q = M - P;
 
-                wipe_queue(qid);
-
-                printf("Child %d got P=%d\n", i, M);
-
-                send_stream_to_port(ppid + 1, ++M);
+                send_stream_to_port(ppid + 1, Q);
 
                 M = get_stream_from_port(ppid);
 
@@ -85,7 +79,22 @@ int game(int argc, char* argv[])
     return 0;
 }
 
-void get_P(int qid, int L)
+int get_P(int M, int L)
+{
+    int qid = make_queue();
+
+    send_to_queue(qid, M, MSG_TO);
+
+    inner_ring(qid, L);
+
+    int P = get_from_queue(qid, MSG_FROM);
+
+    wipe_queue(qid);
+
+    return P;
+}
+
+void inner_ring(int qid, int L)
 {
     int ppid = getpid();
     int score = 0;
