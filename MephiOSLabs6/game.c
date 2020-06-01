@@ -27,6 +27,7 @@ int game(int argc, char* argv[])
 
     int ppid = getpid();
 
+    int zport = ZERO_PORT;
     for (int i = 0; i < N; i++)
     {
         int cpid = fork();
@@ -36,9 +37,9 @@ int game(int argc, char* argv[])
         if (cpid == 0)
         {
             if (i == 0)
-                M = get_udp_from_port(ppid);
+                M = get_udp_from_port(zport);
             else
-                M = get_stream_from_port(ppid + i);
+                M = get_stream_from_port(zport + i);
             int score = 0;
             for (;;)
             {
@@ -56,7 +57,7 @@ int game(int argc, char* argv[])
                 {
                     if (++score >= L)
                     {
-                        send_udp_to_port(ppid, getpid());
+                        send_udp_to_port(zport, getpid());
 
                         exit(0);
                     }
@@ -64,18 +65,18 @@ int game(int argc, char* argv[])
                 }
                 else M = Q;
 
-                send_stream_to_port(ppid + ((i + 1) % N), M);
+                send_stream_to_port(zport + ((i + 1) % N), M);
 
-                M = get_stream_from_port(ppid + i);
+                M = get_stream_from_port(zport + i);
             }
         }
     }
 
     if (ppid == getpid())
     {
-        send_udp_to_port(ppid, M);
+        send_udp_to_port(zport, M);
 
-        int winner_pid = get_udp_from_port(ppid);
+        int winner_pid = get_udp_from_port(zport);
 
         printf("Winner process has PID=%d\n", winner_pid);
 

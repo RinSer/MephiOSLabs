@@ -12,6 +12,7 @@
 #include <errno.h>
 
 #define MAXSIZE 1024 
+#define ZERO_PORT 5000
 
 #define MSG_TO 1
 #define MSG_FROM 2
