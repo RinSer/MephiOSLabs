@@ -79,7 +79,7 @@ int game(int argc, char* argv[])
 
         printf("Winner process has PID=%d\n", winner_pid);
 
-        kill(0, SIGKILL);
+        kill(0, SIGTERM);
     }
 
     return 0;
@@ -127,7 +127,9 @@ void get_P_handler(int signum)
         unlink(shm_file_path);
     }
 
-    kill(0, SIGKILL);
+    printf("Have removed queue qid=%d at %s\n", qid, queue_file_path);
+
+    kill(0, SIGTERM);
 }
 
 extern int errno;
@@ -184,7 +186,7 @@ void inner_ring(int qid, int L)
         errno = 0;
         for (int i = 0; i < num_procs; i++)
         {
-            if (kill(cpids[i], SIGKILL) < 0) errno = 0;
+            if (kill(cpids[i], SIGTERM) < 0) errno = 0;
             wipe_shm(shm_ids[i], i);
         }
     }
