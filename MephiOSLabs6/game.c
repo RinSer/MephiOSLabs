@@ -8,8 +8,8 @@ void game_handler(int signum);
 int game(int argc, char* argv[])
 {
     signal(SIGINT, game_handler);
-    
-    if (argc < 3) 
+
+    if (argc < 3)
     {
         printf("\nShould receive 3 arguments:\n");
         printf("N = number of processes in the main ring\n");
@@ -95,7 +95,7 @@ void get_P_handler(int signum);
 int get_P(int M, int L)
 {
     signal(SIGINT, get_P_handler);
-    
+
     int qid = make_queue();
 
     send_to_queue(qid, M, MSG_TO);
@@ -111,8 +111,10 @@ int get_P(int M, int L)
 
 void get_P_handler(int signum)
 {
+    int pid = getpid();
+    
     char queue_file_path[12];
-    sprintf(queue_file_path, "%d", getpid());
+    sprintf(queue_file_path, "%d", pid);
     key_t msg_key = ftok(queue_file_path, 1);
     int qid = msgget(msg_key, 0666 | IPC_CREAT);
     msgctl(qid, IPC_RMID, NULL);
@@ -133,6 +135,7 @@ void get_P_handler(int signum)
     kill(0, SIGTERM);
 }
 
+void handle_term(int num);
 extern int errno;
 void inner_ring(int qid, int L)
 {
@@ -141,12 +144,9 @@ void inner_ring(int qid, int L)
     int Q, shmid;
     int num_procs = 3;
 
-    int shm_ids[3];
+    int shm_ids[num_procs];
     for (int i = 0; i < num_procs; i++)
-    {
         shm_ids[i] = make_shm(i);
-        send_to_shm(shm_ids[i], -1);
-    }
 
     int cpids[num_procs];
     for (int i = 0; i < num_procs; i++)
@@ -158,6 +158,8 @@ void inner_ring(int qid, int L)
             cpids[i] = cpid;
         else
         {
+            signal(SIGTERM, handle_term);
+            
             if (i == 0)
                 Q = get_from_queue(qid, MSG_TO);
             else
@@ -174,7 +176,6 @@ void inner_ring(int qid, int L)
                     }
                     Q++;
                 }
-                send_to_shm(shm_ids[i], -1);
                 send_to_shm(shm_ids[(i + 1) % num_procs], Q);
                 Q = get_from_shm(shm_ids[i]);
             }
@@ -183,12 +184,17 @@ void inner_ring(int qid, int L)
     
     if (ppid == getpid())
     {
-        while (wait(NULL) > 0);
-        errno = 0;
+        wait(NULL);
         for (int i = 0; i < num_procs; i++)
         {
-            if (kill(cpids[i], SIGTERM) < 0) errno = 0;
+            if (kill(cpids[i], SIGSTOP) < 0) errno = 0;
             wipe_shm(shm_ids[i], i);
         }
     }
+}
+
+void handle_term(int number)
+{
+    printf("Number: %d\n", number);
+    exit(0);
 }

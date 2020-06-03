@@ -2,16 +2,21 @@
 
 int get_from_shm(int shmid)
 {
-    char* str_number;
-    int number = -1;
-    while (number < 0)
-    {
-        usleep(1);
-        str_number = (char*)shmat(shmid, (void*)0, 0);
-        number = atoi(str_number);
-    }
+    SemNumber* sem_number;
+    
+    sem_number = (SemNumber*)shmat(shmid, (void*)0, 0);
 
-    shmdt(str_number);
+    sem_init(&sem_number->semaphore, 1, 0);
+
+    sem_wait(&sem_number->semaphore);
+
+    int number = sem_number->number;
+
+    sem_number->number = -3;
+
+    sem_destroy(&sem_number->semaphore);
+
+    shmdt(sem_number);
     
     catch("Error getting from shm");
 
@@ -20,11 +25,14 @@ int get_from_shm(int shmid)
 
 void send_to_shm(int shmid, int number)
 {
-    char* str_number = (char*)shmat(shmid, (void*)0, 0);
+    SemNumber* sem_number = (SemNumber*)shmat(shmid, (void*)0, 0);
 
-    sprintf(str_number, "%d", number);
+    sem_number->number = number;
 
-    shmdt(str_number);
+    while (sem_number->number != -3) 
+        sem_post(&sem_number->semaphore);
+
+    shmdt(sem_number);
 
     catch("Error sending to shm");
 }

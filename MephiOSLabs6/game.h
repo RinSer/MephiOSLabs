@@ -7,6 +7,8 @@
 #include <sys/ipc.h>
 #include <sys/msg.h>
 #include <sys/shm.h>
+#include <fcntl.h>
+#include <semaphore.h>
 #include <sys/wait.h>
 #include <signal.h>
 #include <errno.h>
@@ -21,3 +23,8 @@ typedef struct game_message {
     long type;
     char payload[MAXSIZE];
 };
+
+typedef struct {
+    sem_t semaphore;
+    int number;
+} SemNumber;
