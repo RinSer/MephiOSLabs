@@ -23,6 +23,12 @@ int game(int argc, char* argv[])
     int M = atoi(argv[1]);
     int L = atoi(argv[2]);
 
+    if (N <= 0)
+    {
+        printf("Number of processes in the main ring is zero or negative!\n");
+        return 0;
+    }
+
     printf("Starting game N=%d, M=%d, L=%d\n", N, M, L);
 
     int ppid = getpid();

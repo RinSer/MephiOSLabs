@@ -2,9 +2,9 @@
 
 int get_from_shm(int shmid)
 {
-    SemNumber* sem_number;
+    sem_num* sem_number;
     
-    sem_number = (SemNumber*)shmat(shmid, (void*)0, 0);
+    sem_number = (sem_num*)shmat(shmid, (void*)0, 0);
 
     sem_init(&sem_number->semaphore, 1, 0);
 
@@ -25,7 +25,7 @@ int get_from_shm(int shmid)
 
 void send_to_shm(int shmid, int number)
 {
-    SemNumber* sem_number = (SemNumber*)shmat(shmid, (void*)0, 0);
+    sem_num* sem_number = (sem_num*)shmat(shmid, (void*)0, 0);
 
     sem_number->number = number;
 

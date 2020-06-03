@@ -19,12 +19,12 @@
 #define MSG_TO 1
 #define MSG_FROM 2
 
-typedef struct game_message {
+typedef struct {
     long type;
     char payload[MAXSIZE];
-};
+} game_message;
 
 typedef struct {
     sem_t semaphore;
     int number;
-} SemNumber;
+} sem_num;

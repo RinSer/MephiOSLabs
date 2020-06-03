@@ -30,8 +30,8 @@ int wipe_queue(int qid)
 
 int get_from_queue(int qid, int type)
 {
-    struct game_message* msg = malloc(sizeof(struct game_message));
-    msgrcv(qid, msg, sizeof(struct game_message), type, NULL);
+    game_message* msg = malloc(sizeof(game_message));
+    msgrcv(qid, msg, sizeof(game_message), type, NULL);
     int number = atoi(msg->payload);
     free(msg);
     return number;
@@ -39,10 +39,10 @@ int get_from_queue(int qid, int type)
 
 void send_to_queue(int qid, int number, int type)
 {
-    struct game_message* msg = malloc(sizeof(struct game_message));
+    game_message* msg = malloc(sizeof(game_message));
     sprintf(msg->payload, "%d", number);
     msg->type = type;
-    msgsnd(qid, msg, sizeof(struct game_message), NULL);
+    msgsnd(qid, msg, sizeof(game_message), NULL);
     free(msg);
     catch("Error sending to queue");
 }
