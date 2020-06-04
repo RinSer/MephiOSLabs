@@ -5,10 +5,9 @@
 */
 
 void game_handler(int signum);
+void child_handler(int signum);
 int game(int argc, char* argv[])
 {
-    signal(SIGINT, game_handler);
-
     if (argc < 3)
     {
         printf("\nShould receive 3 arguments:\n");
@@ -32,6 +31,7 @@ int game(int argc, char* argv[])
     printf("Starting game N=%d, M=%d, L=%d\n", N, M, L);
 
     int ppid = getpid();
+    setpgid(0, 0);
 
     int zport = ZERO_PORT;
     for (int i = 0; i < N; i++)
@@ -39,9 +39,17 @@ int game(int argc, char* argv[])
         int cpid = fork();
         if (cpid < 0)
             return catch("Error forking in outer ring");
+        if (N == 1)
+        {
+            if (cpid > 0)
+                printf("Winner process has PID=%d\n", cpid);
+            exit(0);
+        }
 
         if (cpid == 0)
         {
+            signal(SIGINT, child_handler);
+            
             if (i == 0)
                 M = get_udp_from_port(zport);
             else
@@ -80,6 +88,8 @@ int game(int argc, char* argv[])
 
     if (ppid == getpid())
     {
+        signal(SIGINT, game_handler);
+        
         send_udp_to_port(zport, M);
 
         int winner_pid = get_udp_from_port(zport);
@@ -95,6 +105,12 @@ int game(int argc, char* argv[])
 void game_handler(int signum)
 {
     kill(0, signum);
+    exit(0);
+}
+
+void child_handler(int signum)
+{
+    exit(0);
 }
 
 void get_P_handler(int signum);
