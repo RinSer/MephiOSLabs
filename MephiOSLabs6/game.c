@@ -96,7 +96,7 @@ int game(int argc, char* argv[])
 
         printf("Winner process has PID=%d\n", winner_pid);
 
-        kill(0, SIGINT);
+        kill(0, SIGKILL);
     }
 
     return 0;
