@@ -19,6 +19,9 @@ int get_udp_from_port(int port)
     int n = recvfrom(sockfd, (char*)buffer, MAXSIZE, MSG_WAITALL, (struct sockaddr*)&cliaddr, &len);
     buffer[n] = '\0';
 
+    sendto(sockfd, (const char*)buffer, sizeof(buffer), MSG_CONFIRM,
+        (const struct sockaddr*)&cliaddr, sizeof(servaddr));
+
     close(sockfd);
 
     catch("Error from get udp port");
@@ -26,6 +29,7 @@ int get_udp_from_port(int port)
     return atoi(buffer);
 }
 
+extern int errno;
 void send_udp_to_port(int port, int number)
 {
     int sockfd, len, n;
@@ -41,6 +45,11 @@ void send_udp_to_port(int port, int number)
     sprintf(buffer, "%d", number);
     sendto(sockfd, (const char*)buffer, sizeof(buffer), MSG_CONFIRM,
         (const struct sockaddr*)&servaddr, sizeof(servaddr));
+
+    while (recvfrom(sockfd, (char*)buffer, MAXSIZE, MSG_DONTWAIT, (struct sockaddr*)&servaddr, &len) < 0)
+        sendto(sockfd, (const char*)buffer, sizeof(buffer), MSG_CONFIRM,
+            (const struct sockaddr*)&servaddr, sizeof(servaddr));
+    errno = 0;
 
     close(sockfd);
 

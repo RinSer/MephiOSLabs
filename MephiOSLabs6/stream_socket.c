@@ -23,8 +23,12 @@ int get_stream_from_port(int port)
     int n = read(connection, buffer, MAXSIZE);
     buffer[n] = '\0';
 
+    shutdown(connection, SHUT_RDWR);
     close(connection);
+    shutdown(sfd, SHUT_RDWR);
     close(sfd);
+
+    catch("Get from stream socket error");
     
     return atoi(buffer);
 }
@@ -46,5 +50,8 @@ send_stream_to_port(int port, int number)
     sprintf(buffer, "%d", number);
     send(sock, buffer, strlen(buffer), 0);
 
+    shutdown(sock, SHUT_WR);
     close(sock);
+
+    catch("Send to stream socket error");
 }
