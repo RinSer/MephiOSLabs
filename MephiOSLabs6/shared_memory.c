@@ -1,20 +1,24 @@
 #include <game.h>
 
-int get_from_shm(int shmid)
+int get_from_shm(int shmid, int sem_id, int idx)
 {
     sem_num* sem_number;
     
     sem_number = (sem_num*)shmat(shmid, (void*)0, 0);
+    catch ("Error getting from shm shmat");
 
-    sem_init(&sem_number->semaphore, 1, 0);
+    struct sembuf sops[2];
+    sops[0].sem_num = idx;
+    sops[0].sem_op = 0;
+    sops[0].sem_flg = 0;
+    sops[1].sem_num = idx;
+    sops[1].sem_op = 1;
+    sops[1].sem_flg = 0;
 
-    sem_wait(&sem_number->semaphore);
+    semop(sem_id, sops, 2);
+    catch ("Error getting from shm semop");
 
     int number = sem_number->number;
-
-    sem_number->number = -3;
-
-    sem_destroy(&sem_number->semaphore);
 
     shmdt(sem_number);
     
@@ -23,14 +27,22 @@ int get_from_shm(int shmid)
     return number;
 }
 
-void send_to_shm(int shmid, int number)
+void send_to_shm(int shmid, int number, int sem_id, int idx)
 {
     sem_num* sem_number = (sem_num*)shmat(shmid, (void*)0, 0);
+    catch("Error connecting to shm\n");
 
     sem_number->number = number;
 
-    while (sem_number->number != -3) 
-        sem_post(&sem_number->semaphore);
+    union semun {
+        int val;
+        struct semid_ds* buf;
+        ushort * array;
+    } arg;
+
+    arg.val = 0;
+    semctl(sem_id, idx, SETVAL, arg);
+    catch("Error semctl\n");
 
     shmdt(sem_number);
 

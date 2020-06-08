@@ -157,7 +157,6 @@ void get_P_handler(int signum)
     kill(0, SIGTERM);
 }
 
-void handle_term(int num);
 extern int errno;
 void inner_ring(int qid, int L)
 {
@@ -166,9 +165,23 @@ void inner_ring(int qid, int L)
     int Q, shmid;
     int num_procs = 3;
 
+    int sem_id;
+    key_t key = ftok("/tmp", 25);
+    if (key < 0) catch("Error creating semaphore key\n");
+    sem_id = semget(key, num_procs, 0666 | IPC_CREAT);
+    if (sem_id < 0) catch("Error getting semaphore id\n");
+    
     int shm_ids[num_procs];
     for (int i = 0; i < num_procs; i++)
+    {
         shm_ids[i] = make_shm(i);
+        struct sembuf sops[1];
+        sops[0].sem_num = i;
+        sops[0].sem_op = 1;
+        sops[0].sem_flg = 0;
+        if (semop(sem_id, sops, 1) < 0)
+            catch ("Error at semop\n");
+    }
 
     int cpids[num_procs];
     for (int i = 0; i < num_procs; i++)
@@ -180,12 +193,10 @@ void inner_ring(int qid, int L)
             cpids[i] = cpid;
         else
         {
-            signal(SIGTERM, handle_term);
-            
             if (i == 0)
                 Q = get_from_queue(qid, MSG_TO);
             else
-                Q = get_from_shm(shm_ids[i]);
+                Q = get_from_shm(shm_ids[i], sem_id, i, (i + 1) % num_procs);
             for (;;)
             {
                 if (--Q <= 0)
@@ -198,8 +209,9 @@ void inner_ring(int qid, int L)
                     }
                     Q++;
                 }
-                send_to_shm(shm_ids[(i + 1) % num_procs], Q);
-                Q = get_from_shm(shm_ids[i]);
+                int next_idx = (i + 1) % num_procs;
+                send_to_shm(shm_ids[next_idx], Q, sem_id, next_idx);
+                Q = get_from_shm(shm_ids[i], sem_id, i, next_idx);
             }
         }
     }
@@ -212,11 +224,7 @@ void inner_ring(int qid, int L)
             if (kill(cpids[i], SIGSTOP) < 0) errno = 0;
             wipe_shm(shm_ids[i], i);
         }
+        semctl(sem_id, num_procs, IPC_RMID);
+        catch ("Error removing semaphore\n");
     }
-}
-
-void handle_term(int number)
-{
-    printf("Number: %d\n", number);
-    exit(0);
 }

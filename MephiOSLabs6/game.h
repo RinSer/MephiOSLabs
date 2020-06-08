@@ -12,6 +12,8 @@
 #include <sys/wait.h>
 #include <signal.h>
 #include <errno.h>
+#include <sys/types.h>
+#include <sys/sem.h>
 
 #define MAXSIZE 1024 
 #define ZERO_PORT 5000
@@ -25,6 +27,6 @@ typedef struct {
 } game_message;
 
 typedef struct {
-    sem_t semaphore;
+    //sem_t semaphore;
     int number;
 } sem_num;
